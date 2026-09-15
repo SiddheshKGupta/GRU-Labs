@@ -3,7 +3,7 @@ title: Shepherd
 kind: system
 status: SUPPORTED
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - https://arxiv.org/abs/2605.10913
 ---

@@ -3,7 +3,7 @@ title: NVIDIA OpenShell
 kind: system
 status: PARTIALLY_SUPPORTED
 verified_by_us: partial
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - https://github.com/NVIDIA/OpenShell
   - raw/internal/gru-freeze-v1.1.md

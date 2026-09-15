@@ -3,7 +3,7 @@ title: Escapement typed-boundary retraction
 kind: finding
 status: NEGATIVE_RESULT
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - Internal design record, Escapement v1 AuthorizedAction boundary
   - https://github.com/NVIDIA-NeMo/labs-OO-Agents

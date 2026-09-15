@@ -3,7 +3,7 @@ title: Parallax
 kind: system
 status: PARTIALLY_SUPPORTED
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - https://arxiv.org/abs/2604.12986
 ---
@@ -39,6 +39,21 @@ attacks blocked   98.9%
 false positives   zero
 cases             280 adversarial
 ```
+
+## Arithmetic check — resolved, not confirmed
+
+98.9% of 280 is 276.92, which is not an integer, so the two figures cannot
+both be raw as stated. They reconcile at **277 of 280 blocked**:
+
+```text
+276/280 = 98.57%  -> rounds to 98.6%
+277/280 = 98.93%  -> rounds to 98.9%   <- consistent
+```
+
+So the pair is internally coherent. The raw blocked-count is an
+INFERENCE, not something we read in the paper — we have not opened the
+evaluation table. Recorded because an unexplained discrepancy in a
+headline number is how a figure gets repeated into authority.
 
 ## INFERENCE — the evaluation matters more than the number
 

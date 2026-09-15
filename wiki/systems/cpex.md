@@ -3,8 +3,9 @@ title: CPEX
 kind: system
 status: SUPPORTED
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
+  - https://docs.rs/cpex/latest/cpex/
   - CPEX 0.2.2 release metadata, published 2026-07-15 (Apache-2.0, Rust)
   - raw/internal/gru-freeze-v1.1.md
 ---

@@ -3,7 +3,7 @@ title: Code intelligence is evidence, not a subsystem
 kind: concept
 status: PARTIALLY_SUPPORTED
 verified_by_us: partial
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - raw/internal/gru-freeze-v1.1.md
 ---

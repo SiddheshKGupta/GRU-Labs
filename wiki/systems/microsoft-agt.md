@@ -3,7 +3,7 @@ title: Microsoft Agent Governance Toolkit
 kind: system
 status: PARTIALLY_SUPPORTED
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - https://github.com/microsoft/agent-governance-toolkit
   - raw/internal/gru-freeze-v1.1.md

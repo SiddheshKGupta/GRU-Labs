@@ -3,7 +3,7 @@ title: Escapement effect-surface audit
 kind: finding
 status: NEGATIVE_RESULT
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - Internal audit record, Escapement v1 scripts/ effect surface
 ---

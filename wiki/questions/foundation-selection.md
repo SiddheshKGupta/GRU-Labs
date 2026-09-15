@@ -3,7 +3,7 @@ title: Foundation selection
 kind: question
 status: UNTESTED
 verified_by_us: partial
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - raw/internal/gru-freeze-v1.1.md
   - https://github.com/deepseek-ai/deepseek-harness

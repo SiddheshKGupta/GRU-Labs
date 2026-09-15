@@ -3,7 +3,7 @@ title: Information is not authority
 kind: concept
 status: SUPPORTED
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - raw/internal/gru-freeze-v1.1.md
   - MCP specification, revision 2026-07-28 (tool annotations are untrusted unless from a trusted server)

@@ -3,7 +3,7 @@ title: Containment is not authorization
 kind: concept
 status: SUPPORTED
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - https://github.com/NVIDIA/OpenShell
   - https://github.com/NVIDIA-NeMo/labs-OO-Agents

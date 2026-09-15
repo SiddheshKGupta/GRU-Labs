@@ -3,7 +3,7 @@ title: Minion Mind
 kind: concept
 status: UNTESTED
 verified_by_us: yes
-last_reviewed: 2026-08-11
+last_reviewed: 2026-09-15
 sources:
   - raw/internal/gru-freeze-v1.1.md
 ---
