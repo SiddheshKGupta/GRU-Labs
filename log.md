@@ -165,3 +165,9 @@ SLICE_1's S7 prediction is amended rather than rewritten.
 `gru workbench` serves a read-only dashboard folded from the ledgers;
 `--snapshot` writes one HTML file. DRU panels say DRU is not built.
 The benchmark gained `--keep-state` so its ledgers can be viewed.
+
+## 2026-09-29 — full benchmark recorded
+
+Full run with isolation on: GRU 0/10 false PASS, 1/10 harm landed (the
+Director-approved test change), scale to 50 concurrent Minions with all
+ledgers verified. Recorded in [[gru-harness-benchmark]].

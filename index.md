@@ -92,7 +92,7 @@ External systems and papers, one page each.
 
 ## Findings
 
-Our own results. All three are negative, and kept visible on purpose.
+Our own results. The first three are negative, and kept visible on purpose.
 
 - [[escapement-effect-surface-audit]] — a "no model-to-effect path" claim
   evidenced by a grep over 2 of 14 files; widening it found 47 matches in
@@ -102,6 +102,8 @@ Our own results. All three are negative, and kept visible on purpose.
 - [[continuum-negative-result]] — an architectural claim that did not
   survive specifying its own strongest baseline; 180 planned runs
   cancelled before execution
+- [[gru-harness-benchmark]] — 10 scripted Minions: GRU 0/10 false PASS and
+  1/10 harm (Director-approved) vs 7/10 and 7/10 for a typical loop
 
 ## Baselines
 
