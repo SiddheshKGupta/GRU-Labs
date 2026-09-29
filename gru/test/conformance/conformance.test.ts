@@ -349,6 +349,24 @@ describe("S8 TOCTOU", () => {
     assert.equal(readFileSync(join(root, "src/app.txt"), "utf8"), "todo\n");
   });
 
+  // The executor also checks the brand before redeeming (defence in depth),
+  // so the gate's own refusal is tested directly or its mutant would survive.
+  test("the gate itself refuses forgeries, clones and another gate's actions", () => {
+    const gate = new Gate(() => new Date());
+    const other = new Gate(() => new Date());
+    const effect = { kind: "fs.read" as const, path: "src/app.txt" };
+    const binding = { real: "/w/src/app.txt", type: "file" };
+    const digest = effectDigest(effect, binding);
+    const forged = Object.assign(Object.create(AuthorizedAction.prototype), {
+      authorization_id: "au-x", proposal_id: "pr-x", effect, digest, expires_at: Date.now() + 60_000, grant_refs: [], payload: null,
+    });
+    assert.throws(() => gate.redeem(forged, digest), { name: "GateViolation" });
+    const minted = other.mint({ authorization_id: "au-y", proposal_id: "pr-y", effect, binding, grant_refs: [], payload: null, ttl_ms: 60_000 });
+    assert.throws(() => gate.redeem({ ...minted }, digest), { name: "GateViolation" });
+    assert.throws(() => gate.redeem(minted, digest), { name: "GateViolation" });
+    assert.doesNotThrow(() => other.redeem(minted, digest));
+  });
+
   test("a parent directory swapped for a symlink is refused", async () => {
     const outside = tempDir("gru-outside-");
     const wrap: Wrap = (inner) => ({
