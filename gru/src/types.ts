@@ -292,3 +292,31 @@ export interface GovernedSession {
 }
 
 export type OpenSession = (options: OpenSessionOptions) => Promise<GovernedSession>;
+
+// ---------------------------------------------------------------- composition
+
+export type CredentialStatus = "CONFIGURED" | "MISSING" | "NOT_REQUIRED";
+
+/** Plug-and-play model APIs: presets plus whatever gru.config.json adds. */
+export interface ProviderCatalog {
+  list(): { config: ProviderConfig; credential: CredentialStatus }[];
+  /** "provider/model", or "provider" for its default model. */
+  route(spec: string): ModelRoute;
+  discover(providerId: string): Promise<string[]>;
+  probe(providerId: string, model: string): Promise<ProbeResult>;
+  autoSelect(providerId: string, options?: { prefer?: string }): Promise<{ model: string; probes: ProbeResult[] }>;
+}
+
+/**
+ * The Lego baseplate. Surfaces receive this and never import a sibling
+ * block's implementation directly, so any block can be swapped (a DSH
+ * executor, a sandboxed executor, another route) without touching them.
+ * src/blocks.ts wires the default set.
+ */
+export interface Blocks {
+  openSession: OpenSession;
+  executor(root: string, commands: readonly DeclaredCommand[]): EffectExecutor;
+  catalog(configs: readonly ProviderConfig[]): ProviderCatalog;
+  fixtureRoute(script: unknown): ModelRoute;
+  parseContract(json: unknown): TaskContract;
+}
