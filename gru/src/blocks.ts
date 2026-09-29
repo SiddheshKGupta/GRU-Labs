@@ -12,10 +12,12 @@ import { FixtureRoute, loadFixture } from "./routes/fixture.ts";
 import { ProviderRegistry } from "./routes/providers.ts";
 import { openSession } from "./session.ts";
 
-export const defaultBlocks: Blocks = Object.freeze({
+const blocks: Blocks = {
   openSession,
   executor: (root, commands) => new WorkspaceExecutor(root, commands),
   catalog: (configs) => new ProviderRegistry(configs),
   fixtureRoute: (script) => new FixtureRoute(loadFixture(script)),
   parseContract,
-});
+};
+
+export const defaultBlocks: Blocks = Object.freeze(blocks);

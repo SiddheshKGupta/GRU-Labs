@@ -60,6 +60,25 @@ export class Ledger {
     this.#clock = clock;
   }
 
+  /**
+   * Continue a persisted episode, e.g. to append a Director override after
+   * closure. Refuses a chain that does not verify: appending to a broken
+   * chain would launder the break into a valid-looking tail.
+   */
+  static resume(episodeId: string, store: LedgerStore, clock: Clock = systemClock): Ledger {
+    const ledger = new Ledger(episodeId, store, clock);
+    let prev = GENESIS;
+    parseLedger(store.lines()).forEach((event, seq) => {
+      const { hash, ...unsigned } = event;
+      if (event.seq !== seq || event.episode_id !== episodeId || event.prev !== prev || eventHash(unsigned) !== hash) {
+        throw new Error(`ledger for ${episodeId} does not verify at event ${seq}; refusing to append`);
+      }
+      prev = hash;
+      ledger.#events.push(event);
+    });
+    return ledger;
+  }
+
   get events(): readonly LedgerEvent[] {
     return this.#events;
   }

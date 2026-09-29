@@ -193,7 +193,9 @@ describe("S3 truthful closure", () => {
     );
     assert.equal(report.closure.status, "PARTIAL");
     assert.equal(report.verification.strength, "ASSERTED");
-    assert.equal(report.admissibility.verdict, "UNRESOLVED");
+    // ASSERTED fails verification_sufficient, and a FAILed condition outranks
+    // an undecidable one: an assertion-only episode can never teach.
+    assert.equal(report.admissibility.verdict, "INADMISSIBLE");
     assert.ok(of(events, "claim").some((event) => body(event).strength === "ASSERTED"));
   });
 
@@ -296,8 +298,9 @@ describe("S8 TOCTOU", () => {
       [{ calls: [{ name: "write_file", input: { path: "src/app.txt", content: "ok\n" } }] }, { text: "done" }],
       { wrap },
     );
-    assert.ok(of(events, "violation").some((event) => body(event).kind === "GATE_REFUSED"));
+    assert.ok(of(events, "refusal").some((event) => body(event).kind === "GATE_REFUSED"));
     assert.equal(readFileSync(join(root, "src/app.txt"), "utf8"), "todo\n");
+    assert.deepEqual(of(events, "violation"), [], "the gate holding is governance working, not a violation");
   });
 
   test("a target that appears between authorization and execution is not overwritten", async () => {
@@ -315,7 +318,7 @@ describe("S8 TOCTOU", () => {
       [{ calls: [{ name: "write_file", input: { path: "src/new.txt", content: "mine\n" } }] }, { text: "done" }],
       { wrap },
     );
-    assert.ok(of(events, "violation").some((event) => body(event).kind === "GATE_REFUSED"));
+    assert.ok(of(events, "refusal").some((event) => body(event).kind === "GATE_REFUSED"));
     assert.equal(readFileSync(join(root, "src/new.txt"), "utf8"), "planted\n");
   });
 
@@ -384,7 +387,7 @@ describe("S8 TOCTOU", () => {
       [{ calls: [{ name: "write_file", input: { path: "src/app.txt", content: "ok\n" } }] }, { text: "done" }],
       { wrap },
     );
-    assert.ok(of(events, "violation").some((event) => body(event).kind === "GATE_REFUSED"));
+    assert.ok(of(events, "refusal").some((event) => body(event).kind === "GATE_REFUSED"));
     assert.ok(!existsSync(join(outside, "app.txt")), "nothing was written through the swapped symlink");
   });
 });

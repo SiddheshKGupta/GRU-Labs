@@ -21,7 +21,8 @@ const SRC = fileURLToPath(new URL("../src/", import.meta.url));
 
 // Effectful specifier -> the only source files allowed to import it.
 const ALLOWED: Record<string, readonly string[]> = {
-  "node:fs": ["ledger/store.ts", "executors/workspace.ts", "config.ts", "cli/main.ts", "hooks/daemon.ts"],
+  // Reading the Director's own files (contract, config, fixtures) is T0 input, not a Minion effect.
+  "node:fs": ["ledger/store.ts", "executors/workspace.ts", "config.ts", "cli/main.ts", "cli/repl.ts", "hooks/daemon.ts"],
   "node:fs/promises": [],
   "node:child_process": ["executors/process.ts"],
   "node:net": ["hooks/daemon.ts", "hooks/client.ts"],
@@ -93,7 +94,10 @@ for (const file of files) {
     assert.doesNotMatch(body, /\bprocess\.(binding|dlopen)\b/, `${file.path}: native binding access`);
     assert.doesNotMatch(body, /\beval\s*\(|\bnew\s+Function\s*\(/, `${file.path}: dynamic code evaluation`);
     assert.doesNotMatch(body, /\bshell\s*:\s*true\b/, `${file.path}: shell: true`);
-    assert.doesNotMatch(body, /\bexec(Sync)?\s*\(/, `${file.path}: exec runs a string through a shell`);
+    // A bare exec( is child_process.exec destructured; RegExp.prototype.exec
+    // is always reached through a dot and is harmless. A namespaced
+    // child_process.exec needs the node:child_process import, confined above.
+    assert.doesNotMatch(body, /(?<![.\w$])exec(Sync)?\s*\(/, `${file.path}: exec runs a string through a shell`);
     if (!FETCH_ALLOWED.has(file.path)) {
       assert.doesNotMatch(body, /\bfetch\s*\(/, `${file.path}: network access outside the route blocks`);
     }

@@ -75,6 +75,30 @@ export const MUTANTS: Mutant[] = [
     replace: ': ["MODIFY_WORKSPACE"];',
     tests: ["test/conformance/conformance.test.ts"],
   },
+  {
+    id: "assertion-counts-as-checked",
+    guarantee: "S3: a model's assertion is never verification",
+    file: "src/avl/verification.ts",
+    find: 'return facts.asserted ? "ASSERTED" : "NONE";',
+    replace: 'return facts.asserted ? "CHECKED" : "NONE";',
+    tests: ["test/conformance/conformance.test.ts", "test/kernel-avl.test.ts"],
+  },
+  {
+    id: "reconciliation-ignored",
+    guarantee: "S1/S7: an unmediated workspace change fails the episode",
+    file: "src/session.ts",
+    find: "for (const { path, change } of reconciliation.unexplained) {",
+    replace: "for (const { path, change } of [] as typeof reconciliation.unexplained) {",
+    tests: ["test/conformance/conformance.test.ts"],
+  },
+  {
+    id: "environment-leaks",
+    guarantee: "S7/P1: credentials in GRU's environment never reach a command",
+    file: "src/executors/process.ts",
+    find: 'LANG: "C.UTF-8",',
+    replace: '...(process.env as Record<string, string>), LANG: "C.UTF-8",',
+    tests: ["test/conformance/conformance.test.ts", "test/executors-process.test.ts"],
+  },
 ];
 
 function run(dir: string, tests: string[]): { status: number | null; output: string } {
