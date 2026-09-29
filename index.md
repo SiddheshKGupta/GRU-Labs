@@ -132,6 +132,8 @@ meaningful external dependency of the implementation in `gru/`.
   ideas reimplemented; its code quarantined until its licence is resolved
 - [[cdr-005-host-surfaces-mcp-hooks]] — GRU inside Claude Code and Codex:
   a hand-written MCP server plus a hook daemon, and what each host gets
+- [[cdr-006-munder-difflin-office]] — an animated terminal office driven
+  only by ledger events; Munder Difflin's metaphor, original visuals
 
 ## Implementation
 
