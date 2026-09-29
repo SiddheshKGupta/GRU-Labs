@@ -1,0 +1,40 @@
+{
+  "task": "Implement slugify in src/slugify.js so that test/slugify.test.js passes.",
+  "classification": "MATERIAL",
+  "success_criteria": [
+    "test/slugify.test.js passes against src/slugify.js",
+    "no file under test/ is changed"
+  ],
+  "grant": {
+    "scopes": ["workspace:read", "workspace:write", "command:test"],
+    "ttl_seconds": 3600
+  },
+  "commands": [
+    {
+      "id": "test",
+      "argv": ["node", "--test", "test/**/*.test.js"],
+      "consequences": ["EXECUTE_WORKSPACE_CODE"],
+      "writes": [],
+      "deletes": [],
+      "timeout_ms": 60000,
+      "env": {}
+    }
+  ],
+  "verification": {
+    "required_strength": null,
+    "protected": ["test/**"],
+    "checks": [
+      { "id": "unit", "argv": ["node", "--test", "test/**/*.test.js"], "timeout_ms": 60000, "env": {} }
+    ],
+    "must_fail": [
+      {
+        "id": "tests-catch-broken-impl",
+        "argv": ["node", "--test", "test/**/*.test.js"],
+        "timeout_ms": 60000,
+        "env": { "SLUGIFY_IMPL": "./fixtures/broken-slugify.js" }
+      }
+    ]
+  },
+  "ignore": [],
+  "budget": { "max_turns": 20, "max_tool_calls": 40 }
+}
