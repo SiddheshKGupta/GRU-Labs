@@ -4,6 +4,10 @@ Research wiki for **GRU** (Governed Recurrent Unit), a governed AI
 project-delivery system. It holds what we have read, what we have
 checked, and what we got wrong.
 
+It also holds the implementation, in [`gru/`](gru/README.md). The code is
+not part of the wiki: nothing under `gru/` is a source for a wiki claim
+until a finding page cites it, and `lint.py` does not read it.
+
 Start at [`index.md`](index.md). The rules are in
 [`RESEARCH_SCHEMA.md`](RESEARCH_SCHEMA.md).
 
@@ -36,6 +40,8 @@ wiki/
   baselines/   what a mechanism has to beat
   questions/   open and blocking
   decisions/   component decision records (GRU §18) + licence gate (§19)
+
+gru/           the implementation (slice 1); see gru/README.md
 
 index.md       navigation hub; every page must be linked from here
 log.md         append-only change log
