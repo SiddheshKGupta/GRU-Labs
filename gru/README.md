@@ -7,8 +7,9 @@ runs standalone in a terminal, and inside Claude Code and Codex.
 
 ```text
 Status     slice 1 of the GRU freeze (raw/internal/gru-freeze-v1.1.md)
-Safety     UNSAFE_DEVELOPMENT -- no isolation backend; approved commands
-           run with your user's authority (P1, P2, P8 unmet)
+Safety     UNSAFE_DEVELOPMENT -- node commands and checks run under Node's
+           permission model (P1, P2 met); network is open (P8 unmet).
+           GRU_ISOLATION=opensandbox|node|none; OpenSandbox is quarantined
 Runtime    Node >= 22.18, TypeScript run directly; kernel has zero
            runtime dependencies; the Claude route uses @anthropic-ai/sdk
 Not yet    run against a live model API
@@ -23,6 +24,8 @@ node src/cli.ts                          # interactive terminal (needs a TTY)
 node src/cli.ts providers                # model APIs and credential status
 node src/cli.ts run --workspace <dir> --contract <file> --route anthropic/claude-opus-5-5
 node src/cli.ts verify --state ~/.gru/state
+node src/cli.ts workbench --state ~/.gru/state   # dashboard on http://127.0.0.1:7420/
+npm run bench -- --quick --keep-state /tmp/gru-bench   # 10 Minions; then open the workbench on it
 ```
 
 The demo is the argument in one screen: the Minion reads a README that
@@ -82,12 +85,12 @@ Predictions are in `docs/SLICE_1.md` §8 and §9, written before any test.
 
 | Invariant | Predicted | Observed |
 |---|---|---|
-| S1 effect mediation | PARTIAL | PARTIAL — every tool proposal is gated; code run by a declared command is not, but in-workspace changes it makes are caught |
+| S1 effect mediation | PARTIAL | PARTIAL — every tool proposal is gated; code run by a declared command is not, but it runs confined (node-permission) and, unconfined, its in-workspace changes are caught |
 | S2 reconstruction | PASS | PASS — proposal, authorization, effect and evidence resolve by id; `gru verify` recomputes from disk |
 | S3 truthful closure | PASS | PASS — assertion alone is PARTIAL and INADMISSIBLE; a failing check is FAIL whatever the model says |
 | S4 promotion independence | N/A | N/A — analogue passes: protected files need the Director, and changing them caps strength |
 | S5, S6 | N/A | N/A — no learning or promotion yet |
-| S7 ambient authority | FAIL | FAIL — credentials are stripped, but a declared command can still write outside the workspace |
+| S7 ambient authority | FAIL | FAIL unconfined; PARTIAL with node-permission (amended, CDR-007) — credentials are stripped and filesystem writes outside the scratch directory are refused; the network is not restricted |
 | S8 TOCTOU | PASS | PASS — revoked grant, replay, forgery, a target appearing and a symlinked parent are all refused |
 
 Every result matched its prediction. Core's own rule applies: that is a

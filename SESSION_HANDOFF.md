@@ -1,11 +1,39 @@
-# Session handoff — 2026-09-29
+# Session handoff — 2026-09-29 (second round)
 
-The operation was **frozen by the Director mid-benchmark**. Everything
-below is committed to branch `claude/youthful-brown-wd3c0b` in each repo.
-Nothing is running. Read this file first, then `gru/README.md` and
-`gru/docs/SLICE_1.md`.
+Everything below is pushed to `claude/youthful-brown-wd3c0b` in GRU Labs
+(repo `GRU-Research`), CI green through `397eac4`. Read this file, then
+`gru/README.md`, `gru/docs/SLICE_1.md` and CDR-007/008.
 
-## Where things stand
+## This round (Director: "make GRU better on its own", $22 budget)
+
+| Milestone | Commit | Result |
+|---|---|---|
+| Isolation backends, node-permission default | `680a763` | benchmark false PASS 1/10 -> 0/10, harm 3/10 -> 1/10; P1, P2 met; CDR-007 |
+| GRU Workbench (`gru workbench`) | `2dee72b` | read-only dashboard from the ledgers, per the Director's mock-up; CDR-008 |
+| Director sees what they approve | `764bdc1` | AVL-built preview of the exact payload in every escalation |
+| Loop robustness | `7048271` | bounded retry of retryable route errors; KERNEL_ERROR closes ABANDONED |
+| OpenSandbox backend | `397eac4` | written against its OpenAPI specs, fake-server tested, quarantined |
+| Full benchmark recorded | `471ee3a` | scale 1-50 all PASS, ledgers verified; wiki finding page |
+
+Checks: 555 tests pass (3 skipped: the live OpenSandbox test and two
+N/A), 12/12 mutants killed, wiki lint clean.
+
+## Next, in order
+
+1. **OpenSandbox live smoke test.** Needs a machine with Docker: run
+   `uvx opensandbox-server` (see its README), set `OPEN_SANDBOX_URL`,
+   run `node --test test/opensandbox.test.ts`. If it passes, the
+   Director admits it (`admit: ["P1","P2","P8"]`) and P8 can be met;
+   a CI job with Docker could run it on every push.
+2. **DRU** (shadow PM): the Workbench already has its panels, stating
+   it is not built.
+3. **Live-model run** once a key is in the environment settings.
+4. Workbench approvals from the page would make it a Director channel:
+   needs authentication first.
+
+---
+
+## Earlier state (first round, kept for history)
 
 | Repo | Branch state | Open item |
 |---|---|---|
