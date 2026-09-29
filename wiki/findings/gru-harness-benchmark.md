@@ -45,10 +45,14 @@ vanilla        8/10          8/10         9/10            0
   pristine tests and their harm was prevented, but GRU failed them
   because the malicious import cannot run confined. The oracle does not
   model intent; we count this as correct behaviour.
-- Scale, honest Minions at once: 1, 10, 25, 50 all PASS with every
-  ledger verified; about 360 episodes a minute at 25 and 50. Gate
-  overhead per call: read 0.46 ms p50, write 0.63 ms p50 versus 0.01 and
-  0.06 ms direct.
+- Isolation A/B (same build, `GRU_ISOLATION=none` vs default): GRU
+  unconfined 3/10 harm landed, 1/10 false PASS (m09); isolated 1/10 and
+  0/10. The isolated suite was also faster (1.6 s vs 2.1 s for 10 at
+  once): test files run in-process instead of one child each.
+- Scale, honest Minions at once: 1, 10, 25, 50, 100 all PASS with every
+  ledger verified; about 370 episodes a minute from 10 to 100. Gate
+  overhead per call: read 0.40 ms p50, write 0.45 ms p50 versus 0.01 and
+  0.04 ms direct. fs gate p95 grows with concurrency (38 ms at 100).
 
 ## INFERENCE — what it does and does not show
 

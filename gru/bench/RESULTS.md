@@ -1,7 +1,7 @@
 # GRU benchmark results
 
 ```text
-date        2026-09-29T11:37:07.663Z
+date        2026-09-29T11:55:34.570Z
 machine     4 CPUs, Node v22.22.2, linux
 minions     10 scripted Minions, concurrently, one workspace each
 oracle      the Director's original tests run against each final implementation in a clean copy,
@@ -31,9 +31,9 @@ Scripted Minions make every harness face identical behaviour. This measures the 
 
 | Harness | Episodes where harm landed | ...and closed PASS anyway (undetected) | False PASS | Deserved PASS refused | Wall, 10 at once |
 |---|---|---|---|---|---|
-| gru | 1/10 | 0/10 | 0/10 | 2 | 1664 ms |
-| typical | 7/10 | 7/10 | 7/10 | 0 | 3885 ms |
-| vanilla | 8/10 | 8/10 | 9/10 | 0 | 2420 ms |
+| gru | 1/10 | 0/10 | 0/10 | 2 | 1561 ms |
+| typical | 7/10 | 7/10 | 7/10 | 0 | 3636 ms |
+| vanilla | 8/10 | 8/10 | 9/10 | 0 | 2331 ms |
 
 "Deserved PASS refused" counts episodes whose final code passes the pristine tests with no harm landed, yet closed other than PASS. Under an isolation backend that includes Minion code whose harm was prevented rather than absent (m08, m09): the module's forbidden write throws at import, so the confined checks fail. Refusing to pass code that tries to escape is intended; the oracle does not model intent.
 
@@ -65,10 +65,11 @@ GRU closures that are not PASS, in AVL's own words:
 
 | Minions | Wall | Episodes/min | PASS | Ledgers verified | fs gate p50 | fs gate p95 |
 |---|---|---|---|---|---|---|
-| 1 | 326 ms | 184.2 | 1/1 | 1/1 | 1.17 ms | 1.20 ms |
-| 10 | 1719 ms | 349.0 | 10/10 | 10/10 | 3.55 ms | 5.35 ms |
-| 25 | 4174 ms | 359.4 | 25/25 | 25/25 | 6.33 ms | 11 ms |
-| 50 | 8336 ms | 359.9 | 50/50 | 50/50 | 12 ms | 20 ms |
+| 1 | 331 ms | 181.3 | 1/1 | 1/1 | 0.63 ms | 0.64 ms |
+| 10 | 1556 ms | 385.7 | 10/10 | 10/10 | 3.15 ms | 4.93 ms |
+| 25 | 3984 ms | 376.5 | 25/25 | 25/25 | 5.91 ms | 11 ms |
+| 50 | 8144 ms | 368.4 | 50/50 | 50/50 | 12 ms | 21 ms |
+| 100 | 16345 ms | 367.1 | 100/100 | 100/100 | 20 ms | 38 ms |
 
 Each episode spawns about six Node processes (the Minion's test run, then AVL's unit and must-fail checks), so wall time is dominated by verification, not the gate.
 
@@ -76,8 +77,8 @@ Each episode spawns about six Node processes (the Minion's test run, then AVL's 
 
 | Operation | Through AVL p50 | p95 | Direct p50 | p95 |
 |---|---|---|---|---|
-| read | 0.46 ms | 0.70 ms | 0.01 ms | 0.02 ms |
-| write | 0.63 ms | 0.77 ms | 0.06 ms | 0.08 ms |
+| read | 0.40 ms | 0.51 ms | 0.01 ms | 0.01 ms |
+| write | 0.45 ms | 0.57 ms | 0.04 ms | 0.06 ms |
 
 Through AVL each call parses, classifies, binds, authorizes, redeems, executes, stores evidence and appends two to three hash-chained ledger events.
 

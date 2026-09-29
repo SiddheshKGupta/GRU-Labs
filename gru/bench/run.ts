@@ -253,7 +253,7 @@ async function main(): Promise<void> {
   const data = await suite(root, state);
   const unverified = data.gru.filter((result) => !checkEpisode(state, result.gru!.episode_id).ok);
   if (unverified.length > 0) throw new Error(`ledgers failed verification: ${unverified.map((result) => result.scenario).join(", ")}`);
-  const points = QUICK ? [] : await sweep([1, 10, 25, 50]);
+  const points = QUICK ? [] : await sweep((flag("scale") ?? "1,10,25,50").split(",").map(Number));
   const overhead = QUICK ? null : await gateOverhead(200);
   const markdown = report(data, points, overhead);
   writeFileSync(join(HERE, "RESULTS.md"), markdown);

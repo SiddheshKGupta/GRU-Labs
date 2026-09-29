@@ -36,8 +36,10 @@ product surface (§0), in a first read-only form.
 
 CDR-006 planned an animated terminal office; the Director's mock-up
 asked for this dashboard instead, so the terminal office stays parked
-in `gru/wip/office/`. The avatars are original pixel sprites; the mock-
-up's film characters are not reproduced.
+in `gru/wip/office/`. The avatars are hand-drawn pixel fan art of Gru,
+Dru, Dr. Nefario and the Minions: the Director's decision (2026-09-29)
+for personal, non-commercial use with friends. Revisit before the repo
+or the Workbench is published or distributed.
 
 Next steps that would change the design: approvals from the page (it
 would then be a Director channel and need authentication), and DRU

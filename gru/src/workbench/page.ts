@@ -3,8 +3,8 @@
 // Live mode polls /api/state from `gru workbench`; snapshot mode carries a
 // WorkbenchView inline. Everything that came from a ledger is inserted with
 // textContent, never as markup, because Minion text is untrusted (T3/T4).
-// The avatars are original pixel sprites drawn here; the layout follows the
-// Director's mock-up, the characters do not copy any film's designs.
+// The avatars are hand-drawn pixel fan art of Gru, Dru, Dr. Nefario and the
+// Minions, at the Director's request for personal, non-commercial use (CDR-008).
 
 import type { WorkbenchView } from "./model.ts";
 
@@ -71,15 +71,17 @@ svg.sprite { image-rendering: pixelated; shape-rendering: crispEdges; flex: none
 // Original sprites: rows of palette keys, "." is transparent.
 const SCRIPT = `
 const SPRITES = {
-  minion: ["....aa....", ".....a....", "..bbbbbb..", ".bbbbbbbb.", ".bwebbweb.", ".bbbbbbbb.", ".bbddddbb.", "..bbbbbb..", "..f....f..", ".ff....ff."],
-  lead: ["...cccccc...", "..cccccccc..", "..cvvvvvvc..", "..cvkvvkvc..", "..cccccccc..", "...cccccc...", ".nnnnnnnnnn.", "nnnnnwwnnnnn", "nnnnnrrnnnnn", "nnnnnrrnnnnn", "nnnnnnnnnnnn", ".nnnnnnnnnn.", "..nn....nn..", "..kk....kk.."],
+  minion: ["...k..k...", "..yyyyyy..", ".yyyyyyyy.", "kkggggggkk", ".ygwwwwgy.", ".ygwiiwgy.", ".ygwwwwgy.", ".yyggggyy.", ".yyymmyyy.", ".dddddddd.", ".ddyddydd.", "..dd..dd..", "..kk..kk.."],
+  gru: ["....ssss....", "...ssssss...", "..ssssssss..", "..sesssess..", "..sssnnnnss.", "...ssnnnss..", "....sssss...", "..azazazaz..", "..zazazaza..", ".cccccccccc.", "cccccccccccc", "cccccccccccc", "cccccccccccc", ".cccccccccc.", "..cc....cc..", "..kk....kk.."],
+  dru: ["...hhhhhh...", "..hhhhhhhh..", "..hssssssh..", "..sesssess..", "..sssnnnnss.", "...ssnnnss..", "....sssss...", "..azazazaz..", "..zazazaza..", ".llllllllll.", "llllllllllll", "llllllllllll", "llllllllllll", ".llllllllll.", "..ll....ll..", "..kk....kk.."],
+  nefario: ["....ssss....", "..ssssssssa.", ".ggggsggggs.", ".gwegggweg..", "..ssssnsss..", "...ssnnss...", "....ssss....", "....kkkk....", ".llllllllll.", "llllllllllll", "lkllllllllkl", "llllllllllll", ".llllllllll.", "..ll....ll..", "..kk....kk.."],
 };
 const PALETTES = {
-  gru: { c:"#9fb3c8", v:"#63e0ff", k:"#0b0f16", n:"#27406b", w:"#e9eef6", r:"#e2a93b" },
-  dru: { c:"#c8a3a3", v:"#ff6b6b", k:"#0b0f16", n:"#3a2a33", w:"#e9eef6", r:"#8f2d2d" },
-  nefario: { c:"#b7c7a4", v:"#7cf29a", k:"#0b0f16", n:"#dfe6ee", w:"#9fb3c8", r:"#3f8f5a" },
+  gru: { s:"#e9c7a3", e:"#1b1b1b", n:"#d9ae86", a:"#3b3b40", z:"#8e8e96", c:"#222228", k:"#111111" },
+  dru: { h:"#f2da6b", s:"#f1d2b0", e:"#1b1b1b", n:"#e0b890", a:"#d8d8dc", z:"#f5f5f7", l:"#f2f2f4", k:"#8a8a90" },
+  nefario: { s:"#e8cfb5", a:"#b0b0b0", g:"#5a5f66", w:"#dfe9f2", e:"#1b1b1b", n:"#d2b090", k:"#1b1b1b", l:"#f4f6f8" },
 };
-const BODY = ["#4fc3a1", "#e2a93b", "#6fa8ff", "#d77de0", "#ef8f6b", "#8fd16a", "#63c7e0", "#e0d15a", "#b09cff", "#ff8fb3"];
+const YELLOW = ["#f5d33b", "#f7d84a", "#f2cc2e", "#f6d640"];
 function hash(text) { let h = 0; for (const ch of text) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h; }
 function sprite(rows, palette, scale) {
   const ns = "http://www.w3.org/2000/svg";
@@ -97,7 +99,7 @@ function sprite(rows, palette, scale) {
   return svg;
 }
 function minionSprite(name) {
-  return sprite(SPRITES.minion, { a:"#cfd8e3", b: BODY[hash(name) % BODY.length], w:"#f4f7fb", e:"#0b0f16", d:"#0b0f16", f:"#5b6b80" }, 4);
+  return sprite(SPRITES.minion, { k:"#1d1d1d", y: YELLOW[hash(name) % YELLOW.length], g:"#9aa3ad", w:"#ffffff", i:"#6b4423", m:"#3a2a1a", d:"#2f5ea8" }, 4);
 }
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = String(text); return e; }
 function panel(title, note, cls) { const p = el("section", "panel " + (cls || "")); const h = el("h2", null, title); if (note) h.appendChild(el("small", null, note)); p.appendChild(h); return p; }
@@ -129,15 +131,15 @@ function render(view, mode) {
   const gruSay = t.episodes === 0 ? "No episodes yet. Give me a contract." :
     t.running > 0 ? "Running " + t.running + " of " + t.episodes + " episodes. " + view.pending.length + " waiting on the Director." :
     "All " + t.episodes + " episodes closed: " + t.pass + " PASS, " + t.fail + " FAIL" + (t.partial ? ", " + t.partial + " PARTIAL" : "") + ".";
-  const gru = role("GRU", "project manager", SPRITES.lead, PALETTES.gru, gruSay, [["current task", clip(latest ? latest.task : "none", 90)], ["closed", closed + "/" + t.episodes]]);
+  const gru = role("GRU", "project manager", SPRITES.gru, PALETTES.gru, gruSay, [["current task", clip(latest ? latest.task : "none", 90)], ["closed", closed + "/" + t.episodes]]);
   gru.appendChild(bar(t.episodes ? closed / t.episodes : 0));
   grid.appendChild(gru);
-  grid.appendChild(role("DRU", "shadow PM", SPRITES.lead, PALETTES.dru,
+  grid.appendChild(role("DRU", "shadow PM", SPRITES.dru, PALETTES.dru,
     "Not built yet (slice 2). Until then nobody argues the other side, so treat every PASS as unchallenged.",
     [["top risk", "none recorded"], ["objections", "0 (no DRU)"]]));
   const routes = view.lab.routes.map((r) => r.id + " ×" + r.episodes).join(", ") || "none";
   const backends = view.lab.backends.map((b) => b.id + " ×" + b.episodes).join(", ") || "none: commands run unconfined";
-  grid.appendChild(role("DR. NEFARIO", "the lab", SPRITES.lead, PALETTES.nefario,
+  grid.appendChild(role("DR. NEFARIO", "the lab", SPRITES.nefario, PALETTES.nefario,
     "Routes: " + routes + ". Isolation: " + backends + ".",
     [["unmet", view.lab.unmet.join(", ") || "none"], ["mode", view.lab.unmet.length ? "UNSAFE_DEVELOPMENT" : "GOVERNED"]]));
 
