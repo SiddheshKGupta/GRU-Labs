@@ -28,6 +28,8 @@ export interface FeedItem {
   episode_id: string;
   minion: string;
   type: string;
+  /** Who speaks in the terminal: GRU, AVL, DRU, NEFARIO, DIRECTOR or MINION. */
+  actor: string;
   text: string;
   tone: Tone;
 }
@@ -82,6 +84,10 @@ export interface MinionView {
   problems: string[];
   /** DRU v0's objections to this episode, most severe first. */
   objections: Objection[];
+  /** Model usage summed over the episode's turns, as the route reported it. */
+  tokens: { input: number; output: number; cache_read: number };
+  served_model: string | null;
+  duration_ms: number;
 }
 
 export interface WorkbenchView {
@@ -190,6 +196,9 @@ function foldEpisode(input: EpisodeInput, feed: FeedItem[], pending: PendingAppr
     ledger_ok: input.problems.length === 0,
     problems: [...input.problems],
     objections: challenge(events, input.problems, input.blob),
+    tokens: { input: 0, output: 0, cache_read: 0 },
+    served_model: null,
+    duration_ms: 0,
   };
 
   const proposals = new Map<string, { tool: string; effect: string; consequences: string[] }>();
@@ -199,7 +208,7 @@ function foldEpisode(input: EpisodeInput, feed: FeedItem[], pending: PendingAppr
   let notable: string | null = null;
   let latest = "opened";
   const say = (event: LedgerEvent, text: string, tone: Tone): void => {
-    feed.push({ at: event.at, seq: event.seq, episode_id: input.episode_id, minion, type: event.type, text, tone });
+    feed.push({ at: event.at, seq: event.seq, episode_id: input.episode_id, minion, type: event.type, actor: actorOf(event.type), text, tone });
     if (event.type === "closure" || event.type === "episode.opened") return;
     if (tone === "warn" || tone === "bad") notable = text;
     latest = text;
@@ -211,9 +220,15 @@ function foldEpisode(input: EpisodeInput, feed: FeedItem[], pending: PendingAppr
       case "episode.opened":
         say(event, "opened the episode", "info");
         break;
-      case "model.turn":
+      case "model.turn": {
         view.turns++;
+        const usage = record(b.usage);
+        view.tokens.input += num(usage.input_tokens) ?? 0;
+        view.tokens.output += num(usage.output_tokens) ?? 0;
+        view.tokens.cache_read += num(usage.cache_read_input_tokens) ?? 0;
+        if (typeof b.served_model === "string") view.served_model = b.served_model;
         break;
+      }
       case "proposal": {
         view.tool_calls++;
         proposals.set(str(b.proposal_id), { tool: str(b.tool), effect: describeEffect(b.effect), consequences: strings(b.consequences) });
@@ -300,11 +315,29 @@ function foldEpisode(input: EpisodeInput, feed: FeedItem[], pending: PendingAppr
   }
 
   view.activity = notable ?? latest;
+  const span = Date.parse(view.last_at) - Date.parse(view.started_at);
+  view.duration_ms = Number.isFinite(span) && span > 0 ? span : 0;
+  // DRU speaks in the terminal after the closure it doubts.
+  view.objections
+    .filter((objection) => objection.rule !== "network-open")
+    .forEach((objection, index) =>
+      feed.push({
+        at: view.last_at, seq: 1_000_000 + index, episode_id: input.episode_id, minion, type: "dru.objection", actor: "DRU",
+        text: `${objection.severity} ${objection.question}: ${objection.text}`, tone: objection.severity === "HIGH" ? "bad" : "warn",
+      }),
+    );
   if (budget !== null && budget > 0) view.budget_used = view.status === "RUNNING" ? Math.min(1, view.tool_calls / budget) : view.tool_calls / budget;
   if (view.status === "RUNNING") {
     for (const [id, approval] of escalations) if (!decided.has(id)) pending.push(approval);
   }
   return view;
+}
+
+function actorOf(type: string): string {
+  if (type === "episode.opened") return "GRU";
+  if (type === "director.decision" || type === "director.override") return "DIRECTOR";
+  if (type === "claim" || type === "effect") return "MINION";
+  return "AVL";
 }
 
 function tally(values: (string | null)[]): { id: string; episodes: number }[] {
@@ -337,10 +370,20 @@ export function buildView(inputs: readonly EpisodeInput[], now: Date = new Date(
   feed.sort((a, b) => a.at.localeCompare(b.at) || a.episode_id.localeCompare(b.episode_id) || a.seq - b.seq);
   const count = (status: MinionStatus) => episodes.filter((episode) => episode.status === status).length;
   const sum = (key: "escalated" | "denied" | "refusals" | "violations" | "evidence") => episodes.reduce((total, episode) => total + episode[key], 0);
+  const routes = tally(episodes.map((episode) => episode.route));
+  const backends = tally(episodes.flatMap((episode) => episode.safety?.backends ?? []));
+  const unmet = [...new Set(episodes.flatMap((episode) => episode.safety?.unmet ?? []))].sort();
+  const shown = feed.slice(-FEED_LIMIT);
+  if (shown.length > 0) {
+    shown.unshift({
+      at: shown[0]!.at, seq: -1, episode_id: "", minion: "", type: "lab", actor: "NEFARIO", tone: "info",
+      text: `lab ready: routes ${routes.map((r) => r.id).join(", ") || "none"}; isolation ${backends.map((b) => b.id).join(", ") || "none"}${unmet.length ? `; unmet ${unmet.join(", ")}` : ""}`,
+    });
+  }
   return {
     generated_at: now.toISOString(),
     episodes,
-    feed: feed.slice(-FEED_LIMIT),
+    feed: shown,
     pending,
     checks,
     totals: {
@@ -360,10 +403,6 @@ export function buildView(inputs: readonly EpisodeInput[], now: Date = new Date(
       high_objections: episodes.reduce((total, episode) => total + episode.objections.filter((o) => o.severity === "HIGH").length, 0),
     },
     dru: druSummary(episodes),
-    lab: {
-      routes: tally(episodes.map((episode) => episode.route)),
-      backends: tally(episodes.flatMap((episode) => episode.safety?.backends ?? [])),
-      unmet: [...new Set(episodes.flatMap((episode) => episode.safety?.unmet ?? []))].sort(),
-    },
+    lab: { routes, backends, unmet },
   };
 }

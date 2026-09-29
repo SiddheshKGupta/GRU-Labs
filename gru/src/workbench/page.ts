@@ -38,11 +38,28 @@ header .meta { color:var(--muted); font:12px var(--mono); }
 .panel h2 { margin:0; font:700 12px/1.2 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--accent); display:flex; justify-content:space-between; gap:8px; }
 .panel h2 small { color:var(--muted); font-weight:400; letter-spacing:0; text-transform:none; }
 .role { grid-column: span 3; }
+.term, .queue { grid-column: span 3; }
+.roster { grid-column: span 12; }
+.term { gap:6px; } .term-head { display:flex; justify-content:space-between; align-items:center; } .term-head .win { color:var(--muted); font:12px var(--mono); letter-spacing:.2em; }
+.tabs { display:flex; gap:2px; border-bottom:1px solid var(--line); }
+.tab { background:none; border:0; border-bottom:2px solid transparent; color:var(--muted); font:600 11px var(--mono); letter-spacing:.06em; padding:4px 8px; cursor:pointer; }
+.tab.on { color:var(--fg); border-bottom-color:var(--accent); } .tab:focus-visible, .ghost:focus-visible { outline:2px solid var(--accent); }
+.term .log { max-height: 300px; min-height: 220px; background:var(--panel2); border-radius:4px; padding:6px 8px; }
+.log .msg { color:var(--fg); } .log .who { color:var(--muted); }
+.cmd { display:flex; align-items:center; gap:6px; background:var(--panel2); border:1px solid var(--line); border-radius:4px; padding:4px 8px; }
+.cmd .prompt { color:var(--accent); font:700 12px var(--mono); }
+.cmd input { flex:1; min-width:0; background:transparent; border:0; color:var(--fg); font:12px var(--mono); outline:none; }
+.qactions { display:flex; gap:6px; margin-top:auto; } .qactions .replay { margin-left:auto; }
+.ghost { background:none; border:1px solid var(--line); color:var(--muted); border-radius:3px; font:700 11px var(--mono); padding:3px 10px; }
+.ghost:disabled { opacity:.55; cursor:not-allowed; }
+.table-wrap { overflow-x:auto; } table { border-collapse:collapse; width:100%; min-width:900px; font:12px var(--mono); }
+th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--muted); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:.06em; }
+td.n { text-align:right; font-variant-numeric: tabular-nums; } tr.total td { font-weight:700; border-top:1px solid var(--accent); }
 .feed { grid-column: span 3; grid-row: span 2; }
 .minions { grid-column: span 9; }
 .span3 { grid-column: span 3; }
-@media (max-width: 1100px) { .role, .feed, .span3 { grid-column: span 6; } .minions { grid-column: span 12; } .feed { grid-row: auto; } }
-@media (max-width: 640px) { .role, .feed, .span3, .minions { grid-column: span 12; } }
+@media (max-width: 1100px) { .role, .feed, .span3, .term, .queue { grid-column: span 6; } .minions { grid-column: span 12; } .feed { grid-row: auto; } }
+@media (max-width: 640px) { .role, .feed, .span3, .minions, .term, .queue { grid-column: span 12; } }
 .scene { display:flex; gap:10px; align-items:flex-end; min-height:92px; background:var(--panel2); border-radius:4px; padding:8px; }
 .bubble { position:relative; background:#e9eef6; color:#131a26; border-radius:6px; padding:6px 8px; font:12px/1.35 var(--sans); max-width: 100%; overflow-wrap:anywhere; }
 .kv { display:grid; grid-template-columns: auto 1fr; gap:2px 10px; font:12px var(--mono); }
@@ -119,6 +136,49 @@ function kv(pairs) { const d = el("dl", "kv"); for (const [k, v] of pairs) { d.a
 function bar(share, color) { const b = el("div", "bar"); const i = el("i"); i.style.width = Math.round(Math.max(0, Math.min(1, share)) * 100) + "%"; if (color) i.style.background = color; b.appendChild(i); return b; }
 function clip(text, n) { text = String(text || ""); return text.length > n ? text.slice(0, n - 1) + "…" : text; }
 function time(iso) { return String(iso || "").slice(11, 19); }
+let TAB = "terminal";
+const LOCAL = [];
+const TABS = [["terminal", "TERMINAL"], ["git", "GIT"], ["messages", "MESSAGES"], ["traces", "TRACES"]];
+const ACTOR_COLOR = { GRU:"#e2a93b", AVL:"#63c7e0", DRU:"#ef6b6b", NEFARIO:"#7cf29a", DIRECTOR:"#b09cff", MINION:"#f5d33b", YOU:"#dbe4f0" };
+function num(n) { return Number(n || 0).toLocaleString("en-US"); }
+function secs(ms) { return ms >= 1000 ? (ms / 1000).toFixed(1) + " s" : ms + " ms"; }
+function tabItems(view, tab) {
+  if (tab === "messages") return view.feed.filter((i) => i.actor === "MINION" || i.actor === "DIRECTOR" || i.actor === "DRU");
+  if (tab === "traces") return view.feed.filter((i) => i.actor === "AVL" || i.actor === "NEFARIO");
+  if (tab === "git") return [];
+  return view.feed;
+}
+function feedLine(item) {
+  const line = el("div", "t-" + item.tone);
+  line.appendChild(el("time", null, time(item.at)));
+  const tag = el("b", null, "[" + (item.actor === "MINION" ? item.minion.toUpperCase() : item.actor) + "]");
+  tag.style.color = ACTOR_COLOR[item.actor] || "var(--info)";
+  line.appendChild(tag);
+  line.appendChild(el("span", "msg", item.text));
+  if (item.actor !== "MINION" && item.minion) line.appendChild(el("span", "who", " · " + item.minion));
+  return line;
+}
+function command(view, mode, raw) {
+  const text = String(raw || "").trim(); if (!text) return;
+  const input = document.getElementById("gru-cmd"); if (input) input.value = "";
+  const say = (actor, msg, tone) => LOCAL.push({ at: new Date().toISOString(), actor, minion: "", text: msg, tone: tone || "info" });
+  say("YOU", text);
+  const t = view.totals;
+  const [cmd, ...rest] = text.split(/\s+/);
+  if (cmd === "/status") say("GRU", t.episodes + " episodes: " + t.pass + " PASS, " + t.fail + " FAIL, " + t.running + " running; " + view.pending.length + " waiting on you; DRU has " + t.high_objections + " HIGH objection(s).");
+  else if (cmd === "/pending") { if (!view.pending.length) say("AVL", "Nothing waiting on the Director."); for (const p of view.pending) say("AVL", p.minion + ": " + p.effect + " (" + p.consequences.join(", ") + ")", "warn"); }
+  else if (cmd === "/dru") {
+    const all = view.episodes.flatMap((e) => e.objections.filter((o) => o.rule !== "network-open").map((o) => [e.minion, o]));
+    if (!all.length) say("DRU", "No objections.");
+    for (const [m, o] of all.slice(0, 20)) say("DRU", m + ": " + o.severity + " " + o.question + ": " + o.text, o.severity === "HIGH" ? "bad" : "warn");
+  } else if (cmd === "/minion") {
+    const m = view.episodes.find((e) => e.minion === rest[0]);
+    if (!m) say("GRU", "No Minion called '" + (rest[0] || "") + "'. Try /minion " + (view.episodes[0] ? view.episodes[0].minion : "<name>"), "warn");
+    else say("GRU", m.minion + " spawned " + time(m.started_at) + ", " + m.status + ", " + m.tool_calls + " tool calls, " + num(m.tokens.input + m.tokens.output) + " tokens; last: " + m.activity);
+  } else if (cmd === "/replay" && mode === "snapshot") { replay(view); return; }
+  else say("GRU", "Commands: /status, /pending, /dru, /minion <name>" + (mode === "snapshot" ? ", /replay" : "") + ". Read-only: approvals happen in the Director channel.");
+  TAB = "terminal"; render(view, mode);
+}
 function pct(x) { return x === null || x === undefined ? "n/a" : Math.round(x * 100) + "%"; }
 
 function role(name, subtitle, spriteRows, palette, say, pairs) {
@@ -128,6 +188,9 @@ function role(name, subtitle, spriteRows, palette, say, pairs) {
 }
 
 function render(view, mode) {
+  const prior = document.getElementById("gru-cmd");
+  const keep = prior ? prior.value : ""; const focused = prior !== null && document.activeElement === prior;
+  queueMicrotask(() => { const next = document.getElementById("gru-cmd"); if (next) { next.value = keep; if (focused) next.focus(); } });
   const root = document.getElementById("wb");
   root.textContent = "";
   const t = view.totals;
@@ -162,19 +225,31 @@ function render(view, mode) {
     "Routes: " + routes + ". Isolation: " + backends + ".",
     [["unmet", view.lab.unmet.join(", ") || "none"], ["mode", view.lab.unmet.length ? "UNSAFE_DEVELOPMENT" : "GOVERNED"]]));
 
-  const feed = panel("Terminal", "ledger events, newest last", "feed");
-  const log = el("div", "log");
-  log.id = "feed-log";
-  if (view.feed.length === 0) log.appendChild(el("div", "empty", "no events"));
-  for (const item of view.feed) {
-    const line = el("div", "t-" + item.tone);
-    line.appendChild(el("time", null, time(item.at)));
-    line.appendChild(el("b", null, "[" + item.minion + "]"));
-    line.appendChild(document.createTextNode(item.text));
-    log.appendChild(line);
+  const term = el("section", "panel term");
+  const termHead = el("div", "term-head"); termHead.appendChild(el("h2", null, "Terminal")); termHead.appendChild(el("span", "win", "▢  ✕")); term.appendChild(termHead);
+  const tabs = el("div", "tabs");
+  for (const [id, label] of TABS) {
+    const b = el("button", "tab" + (TAB === id ? " on" : ""), label); b.type = "button";
+    b.addEventListener("click", () => { TAB = id; render(view, mode); });
+    tabs.appendChild(b);
   }
-  feed.appendChild(log);
-  grid.appendChild(feed);
+  term.appendChild(tabs);
+  const log = el("div", "log"); log.id = "feed-log";
+  const items = tabItems(view, TAB);
+  if (TAB === "git") log.appendChild(el("div", "empty", "No git integration yet: GRU records every effect in its ledger, not in commits."));
+  else if (items.length === 0) log.appendChild(el("div", "empty", "no events"));
+  for (const item of items) log.appendChild(feedLine(item));
+  if (TAB === "terminal") for (const item of LOCAL) log.appendChild(feedLine(item));
+  term.appendChild(log);
+  const form = el("form", "cmd");
+  form.appendChild(el("span", "prompt", ">"));
+  const input = el("input"); input.id = "gru-cmd"; input.autocomplete = "off"; input.spellcheck = false;
+  input.placeholder = "Type command... (e.g. /status, /pending, /dru, /minion <name>" + (mode === "snapshot" ? ", /replay" : "") + ")";
+  input.setAttribute("aria-label", "Workbench command");
+  form.appendChild(input);
+  form.addEventListener("submit", (e) => { e.preventDefault(); command(view, mode, input.value); });
+  term.appendChild(form);
+  grid.appendChild(term);
   requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
 
   const minions = panel("Minions: active workspace", t.episodes + " episodes, one Minion each", "minions");
@@ -195,6 +270,27 @@ function render(view, mode) {
   }
   minions.appendChild(cards);
   grid.appendChild(minions);
+
+  const queue = panel("Queue", view.pending.length + " awaiting you", "span3 queue");
+  const qlist = el("div", "list");
+  const qitems = [
+    ...view.pending.map((p) => ({ at: p.at, text: p.minion + " wants " + p.effect, bad: false })),
+    ...view.episodes.flatMap((e) => e.objections.filter((o) => o.severity === "HIGH").map((o) => ({ at: e.last_at, text: "Review " + e.minion + ": " + o.text, bad: true }))),
+  ];
+  if (qitems.length === 0) qlist.appendChild(el("div", "empty", "Queue empty."));
+  for (const q of qitems.slice(0, 8)) {
+    const item = el("div", "item"); item.appendChild(el("span", null, clip(q.text, 84))); item.appendChild(el("span", q.bad ? "FAIL" : "PARTIAL", time(q.at))); qlist.appendChild(item);
+  }
+  queue.appendChild(qlist);
+  const qactions = el("div", "qactions");
+  for (const [label, title] of [["FILES", "Attachments are not available in the read-only Workbench"], ["VOICE", "Voice is not available yet"]]) {
+    const b = el("button", "ghost", label); b.type = "button"; b.disabled = true; b.title = title; qactions.appendChild(b);
+  }
+  const send = el("button", "replay", "SEND"); send.type = "button";
+  send.addEventListener("click", () => { const i = document.getElementById("gru-cmd"); if (i) command(view, mode, i.value); });
+  qactions.appendChild(send);
+  queue.appendChild(qactions);
+  grid.appendChild(queue);
 
   const status = panel("Project status", null, "span3");
   status.appendChild(kv([["episodes", t.episodes], ["running", t.running], ["PASS", t.pass], ["FAIL", t.fail], ["PARTIAL", t.partial], ["ABANDONED", t.abandoned], ["violations", t.violations]]));
@@ -231,17 +327,30 @@ function render(view, mode) {
     ["escalations", t.escalations], ["denied or rejected", t.denials], ["gate refusals", t.refusals],
     ["evidence store", t.evidence + " items"], ["ledgers", (t.episodes - t.ledgers_broken) + "/" + t.episodes + " verify"],
   ]));
-  const queue = el("div", "list");
-  queue.appendChild(el("div", "empty", view.pending.length ? "Waiting on the Director:" : "Nothing waiting on the Director."));
-  for (const p of view.pending) {
-    const item = el("div", "item");
-    item.appendChild(el("span", null, p.minion + ": " + p.effect + " (" + p.consequences.join(", ") + ")"));
-    item.appendChild(el("span", "RUNNING", "PENDING"));
-    queue.appendChild(item);
-  }
-  avl.appendChild(queue);
   grid.appendChild(avl);
   root.appendChild(grid);
+
+  const roster = panel("Minion roster", "spawned, working on, tokens burned", "roster");
+  const wrap = el("div", "table-wrap"); const table = el("table");
+  const hr = el("tr");
+  for (const h of ["Minion", "Spawned", "Status", "Working on", "Model", "Turns", "Tool calls", "Tokens in", "Tokens out", "Cache read", "Duration", "DRU"]) hr.appendChild(el("th", null, h));
+  const thead = el("thead"); thead.appendChild(hr); table.appendChild(thead);
+  const tbody = el("tbody");
+  const sum = { input: 0, output: 0, cache: 0 };
+  for (const m of view.episodes) {
+    sum.input += m.tokens.input; sum.output += m.tokens.output; sum.cache += m.tokens.cache_read;
+    const tr = el("tr");
+    const serious = m.objections.filter((o) => o.rule !== "network-open");
+    const cells = [m.minion, time(m.started_at), m.status, clip(m.activity, 70), m.served_model || m.route || "?", m.turns, m.tool_calls, num(m.tokens.input), num(m.tokens.output), num(m.tokens.cache_read), secs(m.duration_ms), serious.length ? serious.length + (serious[0].severity === "HIGH" ? " HIGH" : "") : "-"];
+    cells.forEach((c, i) => { const td = el("td", i === 2 ? m.status : (i >= 5 && i <= 10 ? "n" : null), c); tr.appendChild(td); });
+    tbody.appendChild(tr);
+  }
+  const tot = el("tr", "total");
+  ["All Minions", "", "", "", "", "", "", num(sum.input), num(sum.output), num(sum.cache), "", ""].forEach((c, i) => tot.appendChild(el("td", i >= 5 ? "n" : null, c)));
+  tbody.appendChild(tot);
+  table.appendChild(tbody); wrap.appendChild(table); roster.appendChild(wrap);
+  if (sum.input + sum.output === 0) roster.appendChild(el("div", "empty", "No model tokens spent: these Minions ran on the scripted (fixture) route. A live route records its real usage per turn in the ledger, and it shows here."));
+  grid.appendChild(roster);
 
   const legend = el("div", "legend");
   [["ok", "allowed / passed"], ["warn", "needs or got a Director decision"], ["bad", "denied / failed / violation"], ["info", "claims and progress"]].forEach(([c, text]) => legend.appendChild(el("span", c, text)));
@@ -255,6 +364,7 @@ function render(view, mode) {
 let replaying = null;
 function replay(view, button) {
   if (replaying) { clearTimeout(replaying); replaying = null; }
+  TAB = "terminal"; LOCAL.length = 0;
   render(view, "snapshot");
   const log = document.getElementById("feed-log");
   const cards = new Map([...document.querySelectorAll(".card")].map((c) => [c.dataset.episode, c]));
@@ -277,10 +387,7 @@ function replay(view, button) {
       replaying = null; return;
     }
     const item = items[i++];
-    const line = el("div", "t-" + item.tone + " fresh cursor");
-    line.appendChild(el("time", null, time(item.at)));
-    line.appendChild(el("b", null, "[" + item.minion + "]"));
-    line.appendChild(document.createTextNode(item.text));
+    const line = feedLine(item); line.classList.add("fresh", "cursor");
     log.appendChild(line);
     log.scrollTop = log.scrollHeight;
     const card = cards.get(item.episode_id);

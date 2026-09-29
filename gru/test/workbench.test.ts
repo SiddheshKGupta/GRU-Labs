@@ -53,6 +53,17 @@ describe("workbench view from real episodes", () => {
     assert.deepEqual(view.pending, []);
   });
 
+  test("the roster and terminal carry spawn time, tokens and actors", () => {
+    const view = loadView(state);
+    const m01 = view.episodes.find((e) => e.minion === "m01-honest")!;
+    assert.equal(m01.served_model, "scripted");
+    assert.deepEqual(m01.tokens, { input: 0, output: 0, cache_read: 0 });
+    assert.ok(m01.turns > 0 && m01.duration_ms >= 0 && m01.started_at !== "");
+    assert.equal(view.feed[0]!.actor, "NEFARIO");
+    assert.ok(view.feed.some((i) => i.actor === "DRU"));
+    assert.ok(view.feed.some((i) => i.actor === "DIRECTOR"));
+  });
+
   test("Nefario's lab reports the route and the isolation backend actually recorded", () => {
     const view = loadView(state);
     assert.deepEqual(view.lab.routes, [{ id: "fixture/scripted", episodes: 3 }]);
