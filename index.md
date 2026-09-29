@@ -128,6 +128,10 @@ meaningful external dependency of the implementation in `gru/`.
   the first live route; fixture route for every test
 - [[cdr-003-typescript-toolchain]] — Node type stripping, zero runtime
   dependencies in the kernel
+- [[cdr-004-unimind-inspire-reimplement]] — UniMind's provider routing
+  ideas reimplemented; its code quarantined until its licence is resolved
+- [[cdr-005-host-surfaces-mcp-hooks]] — GRU inside Claude Code and Codex:
+  a hand-written MCP server plus a hook daemon, and what each host gets
 
 ## Implementation
 

@@ -11,6 +11,13 @@ SOURCES     raw/internal/gru-freeze-v1.1.md (the freeze; cited as §N)
 DECISIONS   wiki/decisions/cdr-001 .. cdr-003
 ```
 
+> **AMENDED 2026-09-29 — scope widened by the Director mid-slice.** After
+> §1–§8 were written, the Director asked for plug-and-play model APIs in
+> the style of opencode (with UniMind as a reference), a Lego-style block
+> architecture, and for GRU to run inside Claude Code and Codex as well as
+> standalone in a terminal. §9 records the additions. §1–§8 are unchanged:
+> the kernel's semantics did not move, only the number of surfaces over it.
+
 ## 1. What this slice proves, and what it does not
 
 **Question (§32.1 item 4, Core's S1/S7):** can every material project
@@ -229,3 +236,43 @@ D5  Trust classes are fixed by principal kind; admission of any T2
 If every result matches, suspect the tests were written to agree with
 this table. Results are recorded in `gru/README.md` without editing the
 predictions.
+
+## 9. Blocks and surfaces (amendment)
+
+```text
+                 terminal (REPL, gru run)   MCP server   Claude Code / Codex hooks
+                            \                   |                 /
+                             ------------ Blocks (types.ts) ------
+                            /        |          |           \
+                      kernel     executor     route      director
+                  session, AVL,  confined fs,  fixture,    terminal,
+                  ledger,        argv-only     Anthropic,  scripted,
+                  admissibility  commands      OpenAI-     MCP elicitation,
+                                               compatible  deny-all
+```
+
+Each block implements one interface in `src/types.ts` and is wired in
+`src/blocks.ts`. Surfaces receive a `Blocks` object and never import a
+sibling's implementation, so a DeepSeek Harness executor, a sandboxed
+executor or another provider replaces one block without touching the
+others. This is the freeze's "replaceable infrastructure" (§4.3) made
+mechanical.
+
+**Routes.** Presets for Anthropic, OpenAI, DeepSeek, OpenRouter, Groq,
+Ollama and LM Studio; any OpenAI-compatible endpoint by config. Discovery,
+live probes and auto-selection follow UniMind's ideas, reimplemented
+(CDR-004). Keys are referenced by environment variable; a key pasted into
+a config file is rejected.
+
+**Host mode** (CDR-005). Under Claude Code, PreToolUse/PostToolUse hooks
+classify the host's own tool calls; AVL answers allow, deny or ask, and
+"ask" hands the decision to the host's permission prompt. The host
+performs the effect, so binding at execution is impossible. Additional
+predictions for host mode, recorded before any host-mode test ran:
+
+| Inv | Host-mode prediction | Reason |
+|---|---|---|
+| S1 | **PARTIAL** (Claude Code), **FAIL** (Codex built-ins) | Claude Code's tools pass PreToolUse; Codex exposes no per-tool hook, so only `gru_*` MCP tools are mediated |
+| S2 | **PASS** | each host effect is recorded against its authorization |
+| S3 | **PASS** | closure still reads only AVL-run checks |
+| S8 | **N/A** | GRU does not execute host effects, so there is nothing to bind |
