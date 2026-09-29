@@ -150,8 +150,20 @@ INDEPENDENT  CHECKED, and no protected file changed during the episode
 ADVERSARIAL  INDEPENDENT, and every must-fail check failed as required
 ```
 
+> **CORRECTED 2026-09-29 — strength grades the verdict, not the outcome.**
+> The ladder above said CHECKED means checks "ran and passed", and the
+> first implementation capped any failing episode at CHECKED. Under the
+> MATERIAL floor that made every verified failure INADMISSIBLE, the
+> opposite of Core schema §5.2 ("a verified failure is among the most
+> valuable records"). Corrected: CHECKED means every declared check ran to
+> a verdict, pass or fail; a check that timed out or never started yields
+> no strength at all. Pass or fail is the separate `outcome`. Found by the
+> kernel block's own report, not by a test — the test encoded the error.
+
 Floors: `MICRO` requires `CHECKED`; `MATERIAL` and `PROGRAM` require
-`INDEPENDENT`. A contract may raise its requirement, never lower it.
+`INDEPENDENT`. A contract may raise its requirement, never lower it. A
+`MATERIAL` or `PROGRAM` contract that declares checks must protect at
+least one path (D8).
 
 ```text
 policy violation (unmediated change, structural break)  -> FAIL
@@ -218,6 +230,21 @@ D4  Commands take no model-supplied arguments in slice 1.
 
 D5  Trust classes are fixed by principal kind; admission of any T2
     backend is a Director action (relationship doc §1.3, Nefario).
+
+D6  Strength is independent of outcome (see the CORRECTED note in §4.4).
+
+D7  The gate refusing an authorized effect at execution -- revoked
+    grant, expiry, a changed binding -- is a `refusal` event, not a
+    violation. Nothing happened, so governance held; whatever changed the
+    binding is caught separately by reconciliation if it was unmediated.
+    Violations are reserved for breaches: unmediated changes, a host
+    performing a denied action, an executor that skipped redemption, a
+    broken ledger.
+
+D8  INDEPENDENT means "no protected file changed", which is vacuous when
+    nothing is protected, so a MATERIAL or PROGRAM contract with checks
+    must declare protected globs. The parser cannot check that they cover
+    what the checks read.
 ```
 
 ## 8. Conformance predictions — recorded before any test ran

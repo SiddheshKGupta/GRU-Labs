@@ -528,7 +528,9 @@ class Session implements GovernedSession {
     } catch (error) {
       trackCommand();
       if (error instanceof GateViolation || error instanceof BindError) {
-        this.#violation("GATE_REFUSED", { authorization_id }, error.message);
+        // The gate held and nothing happened: a refusal, not a violation.
+        // Whatever changed the binding is itself caught by reconciliation.
+        this.#ledger.append("refusal", { kind: "GATE_REFUSED", authorization_id, detail: error.message });
         return { call_id, ok: false, content: `AVL refused execution: ${error.message}` };
       }
       this.#ledger.append("effect", {
@@ -811,8 +813,11 @@ class Session implements GovernedSession {
 
     // 2. Verification, run by AVL (T1) and never through the Minion's gate.
     const checks: VerificationOutcome["checks"] = [];
+    let allChecksRan = true;
     for (const check of contract.verification.checks) {
       const run = await this.#runCheck(check);
+      // 127 and -1 mean the program never ran; a timeout never reached a verdict.
+      if (run.timed_out || run.exit_code === 127 || run.exit_code < 0) allChecksRan = false;
       const passed = run.exit_code === 0 && !run.timed_out;
       checks.push({ id: check.id, exit_code: run.exit_code, passed, evidence_ref: this.#checkEvidence("check", check, run, passed) });
     }
@@ -832,7 +837,7 @@ class Session implements GovernedSession {
     const asserted = this.#ledger.events.some((event) => event.type === "claim");
     const strength = computeStrength({
       checks_declared: checks.length > 0,
-      all_checks_passed: checks.every((check) => check.passed),
+      all_checks_ran: allChecksRan,
       protected_unchanged,
       must_fail_declared: must_fail.length > 0,
       all_must_fail_failed: must_fail.every((check) => check.failed_as_required),

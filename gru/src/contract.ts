@@ -207,6 +207,15 @@ export function parseContract(json: unknown): TaskContract {
     : [];
   // Checks and must-fail checks share one namespace: both label evidence.
   unique([...checks, ...must_fail].map((entry) => entry.id), "contract.verification checks and must_fail");
+  const protectedGlobs = list(verificationFields.protected, "contract.verification.protected", glob);
+  // INDEPENDENT means "no protected file changed"; with nothing protected it
+  // would be reached without being earned.
+  if (classification !== "MICRO" && checks.length > 0 && protectedGlobs.length === 0) {
+    throw new ContractError(
+      `a ${classification} contract with checks must protect the files they depend on ` +
+        "(contract.verification.protected is empty)",
+    );
+  }
 
   let budget = { ...DEFAULT_BUDGET };
   if (present(top, "budget")) {
@@ -229,7 +238,7 @@ export function parseContract(json: unknown): TaskContract {
     commands,
     verification: {
       required_strength,
-      protected: list(verificationFields.protected, "contract.verification.protected", glob),
+      protected: protectedGlobs,
       checks,
       must_fail,
     },

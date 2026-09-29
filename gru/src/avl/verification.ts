@@ -49,7 +49,8 @@ export function requiredFor(contract: {
 
 export interface StrengthFacts {
   checks_declared: boolean;
-  all_checks_passed: boolean;
+  /** Every check produced a real exit status: none timed out or failed to start. */
+  all_checks_ran: boolean;
   protected_unchanged: boolean;
   must_fail_declared: boolean;
   all_must_fail_failed: boolean;
@@ -58,10 +59,12 @@ export interface StrengthFacts {
 }
 
 export function computeStrength(facts: StrengthFacts): Strength {
-  if (!facts.checks_declared) return facts.asserted ? "ASSERTED" : "NONE";
-  // A failed check still ran; the FAIL outcome is decided separately, so a
-  // failing episode is not stronger evidence than CHECKED.
-  if (!facts.all_checks_passed || !facts.protected_unchanged) return "CHECKED";
+  // Strength grades the verdict, pass or fail alike: an independent check
+  // that failed is as trustworthy as one that passed, and a verified
+  // failure is among the most valuable records (Core schema §5.2). A check
+  // that timed out or never started produced no verdict at all.
+  if (!facts.checks_declared || !facts.all_checks_ran) return facts.asserted ? "ASSERTED" : "NONE";
+  if (!facts.protected_unchanged) return "CHECKED";
   if (!facts.must_fail_declared || !facts.all_must_fail_failed) return "INDEPENDENT";
   return "ADVERSARIAL";
 }

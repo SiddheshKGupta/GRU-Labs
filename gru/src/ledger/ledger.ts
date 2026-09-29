@@ -20,6 +20,9 @@ export type EventType =
   | "effect"
   | "evidence"
   | "violation"
+  // The gate held: an authorized effect was refused at execution (revoked
+  // grant, expiry, a changed binding). Governance working, not a breach.
+  | "refusal"
   | "reconciliation"
   | "verification"
   | "closure"

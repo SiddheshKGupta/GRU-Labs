@@ -333,12 +333,14 @@ describe("handle", () => {
     assert.equal(result.ok, false);
     assert.match(result.content, /^AVL refused execution: grant gr-0 was revoked or expired after authorization/);
     assert.equal(executor.files.get("src/parser.ts"), FILES["src/parser.ts"]);
-    const [violation] = ofType(session, "violation");
-    assert.equal(violation!.kind, "GATE_REFUSED");
+    const [refusal] = ofType(session, "refusal");
+    assert.equal(refusal!.kind, "GATE_REFUSED");
     assert.equal(ofType(session, "grant.revoked")[0]!.actor, "director:alice");
     assert.deepEqual(ofType(session, "effect"), []);
+    // The gate holding is governance working, not a breach: no violation.
     const report = await session.close("COMPLETED");
-    assert.equal(report.closure.status, "FAIL");
+    assert.deepEqual(ofType(session, "violation"), []);
+    assert.deepEqual(report.violations, []);
   });
 
   it("refuses execution when the path resolves elsewhere at execution time", async () => {
@@ -351,7 +353,8 @@ describe("handle", () => {
     const result = await pending;
     assert.match(result.content, /does not match the effect authorized/);
     assert.equal(executor.files.get("src/parser.ts"), FILES["src/parser.ts"]);
-    assert.equal(ofType(session, "violation")[0]!.kind, "GATE_REFUSED");
+    assert.equal(ofType(session, "refusal")[0]!.kind, "GATE_REFUSED");
+    assert.deepEqual(ofType(session, "violation"), []);
   });
 
   it("refuses execution after the authorization expires", async () => {
@@ -463,6 +466,10 @@ describe("close", () => {
     const evidence = ofType(session, "evidence").find((entry) => entry.label === "check:unit");
     assert.equal(evidence!.relation, "FALSIFIES");
     assert.equal(evidence!.evidence_id, report.verification.checks[0]!.evidence_ref);
+    // Strength grades the verdict, not the outcome: an independent failure is
+    // a verified negative, admissible for learning (Core schema §5.2).
+    assert.equal(report.verification.strength, "INDEPENDENT");
+    assert.equal(report.admissibility.verdict, "ADMISSIBLE_NEGATIVE");
   });
 
   it("treats a check that could not run as failed", async () => {
@@ -473,6 +480,9 @@ describe("close", () => {
     const report = await session.close("COMPLETED");
     assert.equal(report.verification.outcome, "FAIL");
     assert.equal(report.closure.status, "FAIL");
+    // A check that never ran produced no verdict, so nothing here may teach.
+    assert.equal(report.verification.strength, "NONE");
+    assert.equal(report.admissibility.verdict, "INADMISSIBLE");
   });
 
   it("passes a MATERIAL episode at INDEPENDENT when checks pass and protected files are unchanged", async () => {

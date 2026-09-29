@@ -43,6 +43,20 @@ describe("parseContract", () => {
     assert.deepEqual(contract.budget, { max_turns: 5, max_tool_calls: 100 });
   });
 
+  it("requires protected globs when a MATERIAL or PROGRAM contract declares checks", () => {
+    const unit = { id: "unit", argv: ["node", "--test"], timeout_ms: 5000 };
+    for (const classification of ["MATERIAL", "PROGRAM"]) {
+      assert.throws(
+        () => parseContract({ ...minimal(), classification, verification: { protected: [], checks: [unit] } }),
+        (error: unknown) => error instanceof ContractError && /must protect the files they depend on/.test(error.message),
+      );
+      assert.doesNotThrow(() => parseContract({ ...minimal(), classification, verification: { protected: ["test/**"], checks: [unit] } }));
+    }
+    // With no checks there is no verdict to make hollow; MICRO's floor is CHECKED anyway.
+    assert.doesNotThrow(() => parseContract({ ...minimal(), classification: "MATERIAL", verification: { protected: [], checks: [] } }));
+    assert.doesNotThrow(() => parseContract({ ...minimal(), verification: { protected: [], checks: [unit] } }));
+  });
+
   it("returns a deep-frozen contract", () => {
     const contract = parseContract(withCommand());
     assert.ok(Object.isFrozen(contract));

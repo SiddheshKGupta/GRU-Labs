@@ -33,7 +33,7 @@ describe("verification ladder", () => {
 
   const facts = (overrides: Partial<StrengthFacts>): StrengthFacts => ({
     checks_declared: true,
-    all_checks_passed: true,
+    all_checks_ran: true,
     protected_unchanged: true,
     must_fail_declared: false,
     all_must_fail_failed: true,
@@ -44,7 +44,9 @@ describe("verification ladder", () => {
   it("computes each rung from observed facts", () => {
     assert.equal(computeStrength(facts({ checks_declared: false })), "NONE");
     assert.equal(computeStrength(facts({ checks_declared: false, asserted: true })), "ASSERTED");
-    assert.equal(computeStrength(facts({ all_checks_passed: false })), "CHECKED");
+    // A check that never reached a verdict (timeout, could not start) is no evidence.
+    assert.equal(computeStrength(facts({ all_checks_ran: false })), "NONE");
+    assert.equal(computeStrength(facts({ all_checks_ran: false, asserted: true })), "ASSERTED");
     assert.equal(computeStrength(facts({ protected_unchanged: false })), "CHECKED");
     assert.equal(computeStrength(facts({})), "INDEPENDENT");
     assert.equal(computeStrength(facts({ must_fail_declared: true, all_must_fail_failed: false })), "INDEPENDENT");
