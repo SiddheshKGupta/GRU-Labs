@@ -42,6 +42,7 @@ import { effectDigest, Gate, GateViolation, type Binding } from "./avl/gate.ts";
 import { matchesAny, normaliseWorkspacePath, PathError } from "./avl/paths.ts";
 import { principal, type Principal } from "./avl/principal.ts";
 import { reconcile } from "./avl/reconcile.ts";
+import { effectPreview } from "./avl/preview.ts";
 import { computeSafety } from "./avl/safety.ts";
 import { computeStrength, requiredFor } from "./avl/verification.ts";
 import { parseContract } from "./contract.ts";
@@ -454,6 +455,12 @@ class Session implements GovernedSession {
         effect: structuredClone(effect),
         consequences: [...consequences],
         reasons: [...evaluation.reasons],
+        preview: effectPreview(
+          effect,
+          parsed.payload,
+          binding,
+          effect.kind === "process.run" ? this.#classify.command(effect.command_id) : undefined,
+        ),
       });
       if (decision === null) {
         return { call_id, ok: false, content: "AVL ESCALATED; the episode closed before the Project Director decided" };

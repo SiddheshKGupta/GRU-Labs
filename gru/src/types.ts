@@ -211,6 +211,8 @@ export interface EscalationRequest {
   effect: Effect;
   consequences: Consequence[];
   reasons: string[];
+  /** What would happen, built by AVL from the exact payload the digest binds (avl/preview.ts). */
+  preview?: string;
 }
 
 export interface DirectorDecision {

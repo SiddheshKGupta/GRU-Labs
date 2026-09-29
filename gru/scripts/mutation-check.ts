@@ -115,6 +115,14 @@ export const MUTANTS: Mutant[] = [
     replace: "argvs.some((argv) => backend.covers!(argv))",
     tests: ["test/conformance/conformance.test.ts"],
   },
+  {
+    id: "preview-hides-payload",
+    guarantee: "the Director sees the exact content an escalated write would put on disk",
+    file: "src/session.ts",
+    find: "          parsed.payload,\n",
+    replace: "          undefined,\n",
+    tests: ["test/preview.test.ts"],
+  },
 ];
 
 function run(dir: string, tests: string[]): { status: number | null; output: string } {

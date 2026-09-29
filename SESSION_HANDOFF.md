@@ -119,8 +119,8 @@ alarm) and show verification outcome and strength separately.
 
 ## Known gaps (from builder reports, not yet fixed)
 
-- `EscalationRequest` carries no write payload; the Director approves a
-  protected write seeing only its digest.
+- ~~`EscalationRequest` carries no write payload~~ Fixed: AVL builds a
+  preview from the exact payload the digest binds (`avl/preview.ts`).
 - Host mode: Claude Code hook payload shapes and Codex's `tool_timeout_sec`
   are from memory, tested only against payloads we wrote. Codex's
   built-in shell is not mediated at all.

@@ -237,6 +237,9 @@ export function renderEscalation(request: EscalationRequest, style: Style): stri
     `  authorization ${safeText(request.authorization_id)}`,
     "  AVL says:",
     ...request.reasons.map((reason) => `    - ${safeText(reason, { max: 300 })}`),
+    ...(request.preview === undefined
+      ? []
+      : ["  what would happen (written by the Minion; shown as text):", ...safeText(request.preview, { multiline: true, max: 6000 }).split("\n").map((line) => `    ${line}`)]),
     style.yellow(bar),
   ];
   return `${lines.join("\n")}\n`;

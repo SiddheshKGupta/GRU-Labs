@@ -87,6 +87,7 @@ export function escalationMessage(request: EscalationRequest): string {
     `Effect: ${JSON.stringify(request.effect)}`,
     `Consequences: ${request.consequences.join(", ") || "none"}`,
     `Why: ${request.reasons.join("; ") || "no reason given"}`,
+    ...(request.preview === undefined ? [] : ["What would happen (the Minion wrote this content):", request.preview]),
     `Authorization ${request.authorization_id}, proposal ${request.proposal_id}. Approving covers this one action only.`,
   ].join("\n");
 }
