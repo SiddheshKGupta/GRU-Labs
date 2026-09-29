@@ -66,6 +66,18 @@ header .meta { color:var(--muted); font:12px var(--mono); }
 .legend { display:flex; flex-wrap:wrap; gap:14px; font:11px var(--mono); color:var(--muted); }
 .legend span::before { content:"■ "; } .legend .ok::before{color:var(--ok)} .legend .warn::before{color:var(--warn)} .legend .bad::before{color:var(--bad)} .legend .info::before{color:var(--info)}
 svg.sprite { image-rendering: pixelated; shape-rendering: crispEdges; flex: none; }
+.replay { font:700 11px var(--mono); color:var(--bg); background:var(--accent); border:0; border-radius:3px; padding:3px 10px; cursor:pointer; }
+.replay:focus-visible { outline:2px solid var(--fg); outline-offset:2px; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes pop { from { transform: scale(.6); opacity:0; } to { transform: scale(1); opacity:1; } }
+@keyframes blink { 50% { opacity: 0; } }
+.working svg.sprite { animation: bob .5s ease-in-out infinite; }
+.working .bubble { outline: 1px solid var(--info); }
+.chip.hidden { visibility:hidden; }
+.chip.show { animation: pop .25s ease-out; }
+.log .cursor::after { content:"▌"; animation: blink 1s step-end infinite; color:var(--accent); }
+.log .fresh { animation: pop .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .working svg.sprite, .chip.show, .log .fresh, .log .cursor::after { animation: none; } }
 `;
 
 // Original sprites: rows of palette keys, "." is transparent.
@@ -122,6 +134,12 @@ function render(view, mode) {
   const head = el("header");
   head.appendChild(el("h1", null, "GRU WORKBENCH"));
   head.appendChild(el("span", "badge" + (mode === "live" ? " live" : ""), mode === "live" ? "LIVE" : "SNAPSHOT"));
+  if (mode === "snapshot" && view.feed.length) {
+    const button = el("button", "replay", "▶ Replay");
+    button.type = "button";
+    button.addEventListener("click", () => replay(view, button));
+    head.appendChild(button);
+  }
   head.appendChild(el("span", "meta", "ledger state at " + view.generated_at.replace("T", " ").slice(0, 19) + " UTC · " + t.episodes + " episodes"));
   root.appendChild(head);
 
@@ -146,6 +164,7 @@ function render(view, mode) {
 
   const feed = panel("Terminal", "ledger events, newest last", "feed");
   const log = el("div", "log");
+  log.id = "feed-log";
   if (view.feed.length === 0) log.appendChild(el("div", "empty", "no events"));
   for (const item of view.feed) {
     const line = el("div", "t-" + item.tone);
@@ -162,7 +181,8 @@ function render(view, mode) {
   const cards = el("div", "cards");
   if (view.episodes.length === 0) cards.appendChild(el("div", "empty", "none yet"));
   for (const m of view.episodes) {
-    const card = el("div", "card");
+    const card = el("div", "card" + (m.status === "RUNNING" ? " working" : ""));
+    card.dataset.episode = m.episode_id;
     const top = el("div", "row"); top.appendChild(minionSprite(m.minion)); top.appendChild(el("span", "chip " + m.status, m.status)); card.appendChild(top);
     card.appendChild(el("div", "name", m.minion));
     card.appendChild(el("div", "bubble", clip(m.activity, 90)));
@@ -227,6 +247,54 @@ function render(view, mode) {
   [["ok", "allowed / passed"], ["warn", "needs or got a Director decision"], ["bad", "denied / failed / violation"], ["info", "claims and progress"]].forEach(([c, text]) => legend.appendChild(el("span", c, text)));
   legend.appendChild(el("span", "", "Read-only: approvals happen in the Director channel (terminal or MCP)."));
   root.appendChild(legend);
+}
+
+// Replay: the ledger again, event by event. Cards start working with their
+// badges hidden; each event types into the terminal and into its Minion's
+// bubble; a closure reveals the badge. Nothing is invented: it is the feed.
+let replaying = null;
+function replay(view, button) {
+  if (replaying) { clearTimeout(replaying); replaying = null; }
+  render(view, "snapshot");
+  const log = document.getElementById("feed-log");
+  const cards = new Map([...document.querySelectorAll(".card")].map((c) => [c.dataset.episode, c]));
+  for (const card of cards.values()) {
+    card.classList.add("working");
+    card.querySelector(".chip").classList.add("hidden");
+    card.querySelector(".bubble").textContent = "…";
+  }
+  log.textContent = "";
+  const again = document.querySelector(".replay");
+  if (again) again.textContent = "↺ Replaying…";
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const items = view.feed;
+  let i = 0;
+  const step = () => {
+    const prev = log.lastElementChild; if (prev) prev.classList.remove("cursor");
+    if (i >= items.length) {
+      for (const card of cards.values()) card.classList.remove("working");
+      if (again) again.textContent = "▶ Replay";
+      replaying = null; return;
+    }
+    const item = items[i++];
+    const line = el("div", "t-" + item.tone + " fresh cursor");
+    line.appendChild(el("time", null, time(item.at)));
+    line.appendChild(el("b", null, "[" + item.minion + "]"));
+    line.appendChild(document.createTextNode(item.text));
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+    const card = cards.get(item.episode_id);
+    if (card) {
+      if (item.type === "closure") {
+        card.classList.remove("working");
+        const chip = card.querySelector(".chip"); chip.classList.remove("hidden"); chip.classList.add("show");
+      } else if (item.type !== "episode.opened") {
+        card.querySelector(".bubble").textContent = clip(item.text, 90);
+      }
+    }
+    replaying = setTimeout(step, reduce ? 0 : Math.max(35, 2400 / Math.max(1, items.length) * 10));
+  };
+  step();
 }
 `;
 
