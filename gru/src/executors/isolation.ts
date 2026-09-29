@@ -69,6 +69,7 @@ export class NodePermissionIsolation implements IsolationBackend {
     "covers only argv whose program is node; other programs run unconfined",
     "the workspace is read-only while a command or check runs; files change only through write_file and delete_file",
     "child processes are refused, so tests that spawn processes fail",
+    "symlinks already in the workspace are followed even outside it (a documented limit of Node's permission model); Minions cannot create them",
   ];
 
   covers(argv: readonly string[]): boolean {
