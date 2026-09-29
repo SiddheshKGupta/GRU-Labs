@@ -119,7 +119,18 @@ Open, and blocking something.
 
 ## Decisions
 
-Empty. GRU §18 requires a component decision record per meaningful
-external dependency and §19 a licence gate before adoption; `wiki/decisions/`
-is where those go. Nothing has been adopted yet, so nothing is recorded —
-several system pages above are candidates that will need one.
+Component decision records (GRU §18) with the licence gate (§19), one per
+meaningful external dependency of the implementation in `gru/`.
+
+- [[cdr-001-own-kernel-adapter-seam]] — AVL, ledger and Minion loop are
+  built native; DeepSeek Harness attaches in slice 2 behind an adapter
+- [[cdr-002-anthropic-sdk-route]] — Claude through the Anthropic SDK as
+  the first live route; fixture route for every test
+- [[cdr-003-typescript-toolchain]] — Node type stripping, zero runtime
+  dependencies in the kernel
+
+## Implementation
+
+`gru/` holds the implementation. It is not part of the wiki: nothing
+under it is a source for a wiki claim until a finding page cites it.
+Start with `gru/README.md` and `gru/docs/SLICE_1.md`.
