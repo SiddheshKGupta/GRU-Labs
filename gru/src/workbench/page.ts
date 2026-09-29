@@ -62,7 +62,7 @@ header .meta { color:var(--muted); font:12px var(--mono); }
 .list .item { display:flex; justify-content:space-between; gap:8px; border-bottom:1px dashed var(--line); padding-bottom:4px; }
 .list .item span:first-child { overflow-wrap:anywhere; min-width:0; }
 .empty { color:var(--muted); font:12px var(--mono); }
-.q { display:grid; gap:4px; } .q .step { display:flex; gap:6px; } .q .n { width:20px; height:20px; border:1px solid var(--line); border-radius:3px; display:grid; place-items:center; font:11px var(--mono); color:var(--muted); }
+.q { display:grid; gap:4px; } .q .step { display:flex; gap:6px; align-items:center; } .q .step span:last-child { margin-left:auto; font:11px var(--mono); } .q .n { width:20px; height:20px; border:1px solid var(--line); border-radius:3px; display:grid; place-items:center; font:11px var(--mono); color:var(--muted); }
 .legend { display:flex; flex-wrap:wrap; gap:14px; font:11px var(--mono); color:var(--muted); }
 .legend span::before { content:"■ "; } .legend .ok::before{color:var(--ok)} .legend .warn::before{color:var(--warn)} .legend .bad::before{color:var(--bad)} .legend .info::before{color:var(--info)}
 svg.sprite { image-rendering: pixelated; shape-rendering: crispEdges; flex: none; }
@@ -134,9 +134,10 @@ function render(view, mode) {
   const gru = role("GRU", "project manager", SPRITES.gru, PALETTES.gru, gruSay, [["current task", clip(latest ? latest.task : "none", 90)], ["closed", closed + "/" + t.episodes]]);
   gru.appendChild(bar(t.episodes ? closed / t.episodes : 0));
   grid.appendChild(gru);
-  grid.appendChild(role("DRU", "shadow PM", SPRITES.dru, PALETTES.dru,
-    "Not built yet (slice 2). Until then nobody argues the other side, so treat every PASS as unchallenged.",
-    [["top risk", "none recorded"], ["objections", "0 (no DRU)"]]));
+  const top = view.dru.top;
+  grid.appendChild(role("DRU", "shadow PM · rules v0", SPRITES.dru, PALETTES.dru,
+    top ? top.minion + ": " + top.text : "No objections. Every closure holds up against my rules.",
+    [["top risk", top ? top.severity + " · " + top.question : "none"], ["objections", t.objections + " (" + t.high_objections + " high)"]]));
   const routes = view.lab.routes.map((r) => r.id + " ×" + r.episodes).join(", ") || "none";
   const backends = view.lab.backends.map((b) => b.id + " ×" + b.episodes).join(", ") || "none: commands run unconfined";
   grid.appendChild(role("DR. NEFARIO", "the lab", SPRITES.nefario, PALETTES.nefario,
@@ -168,6 +169,8 @@ function render(view, mode) {
     card.appendChild(bar(m.budget_used ?? 0, m.status === "FAIL" ? "var(--bad)" : m.status === "RUNNING" ? "var(--info)" : "var(--ok)"));
     const meta = el("div", "row"); meta.appendChild(el("span", null, "budget " + pct(m.budget_used))); meta.appendChild(el("span", null, m.strength || "unverified")); card.appendChild(meta);
     if (!m.ledger_ok) card.appendChild(el("div", "row FAIL", "ledger does not verify"));
+    const serious = m.objections.filter((o) => o.rule !== "network-open");
+    if (serious.length) card.appendChild(el("div", "row " + (serious[0].severity === "HIGH" ? "FAIL" : "PARTIAL"), "DRU: " + serious.length + " objection" + (serious.length === 1 ? "" : "s")));
     cards.appendChild(card);
   }
   minions.appendChild(cards);
@@ -183,7 +186,12 @@ function render(view, mode) {
     const s = el("div", "step"); s.appendChild(el("span", "n", i + 1)); s.appendChild(el("span", null, name)); q.appendChild(s);
   });
   debate.appendChild(q);
-  debate.appendChild(el("div", "empty", "No debates: DRU is not built yet."));
+  [...q.children].forEach((row, i) => {
+    const key = ["Q1 Objective", "Q2 Evidence", "Q3 Assumptions", "Q4 Risk", "Q5 Decision"][i];
+    const n = view.dru.by_question[key] || 0;
+    row.appendChild(el("span", n ? "FAIL" : "PASS", n ? n + " objection" + (n === 1 ? "" : "s") : "clear"));
+  });
+  debate.appendChild(el("div", "empty", "DRU v0 is rules over the ledger, not a model; it never changes a closure."));
   grid.appendChild(debate);
 
   const verify = panel("Verification", view.checks.length + " check runs", "span3");

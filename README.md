@@ -16,7 +16,7 @@ wiki behind it (`wiki/`, `raw/`).
 |---|---|---|
 | **You, the Director** | Approve protected changes, accept risk, own every decision | yes |
 | **GRU** | Plans, staffs and runs the Minions; proposes closure | slice 1: one Minion per episode |
-| **DRU** | Gru's twin: argues how each decision could fail | not yet |
+| **DRU** | Gru's twin: argues how each decision could fail | v0: rules over the ledger, objections per debate question |
 | **Dr. Nefario** | The lab: model routes, tools, isolation backends | routes, providers, isolation |
 | **Minions** | Do the work, on any model: Claude, OpenAI-compatible APIs, DeepSeek, local models | yes |
 | **AVL** | Plain code, not a model: gates every action, keeps a hash-chained ledger, decides PASS / PARTIAL / FAIL | yes |
@@ -87,7 +87,7 @@ were written by the same hands.
   restricted inside commands (P8). OpenSandbox with egress denied is the
   planned fix.
 - No live model run yet: this environment has no API key.
-- DRU, the GRU–DRU debate and multi-Minion teams are the next slice.
+- DRU is rules, not a model yet; the GRU–DRU debate and multi-Minion teams are the next slice.
 
 `SESSION_HANDOFF.md` has the current state and the next steps in order.
 

@@ -22,8 +22,9 @@ product surface (§0), in a first read-only form.
 - Every panel is a pure fold over ledger events (`workbench/model.ts`);
   the page cannot show a state the ledger does not record. A ledger that
   fails `verifyChain`/`verifyStructure` is shown as broken, not dropped.
-- DRU and the debate are not built, and the page says so rather than
-  showing placeholder objections.
+- DRU v0 (rules over the ledger, `src/dru/challenge.ts`) fills the DRU
+  panel and the debate's five questions with real objections; it never
+  changes a closure.
 - Minion text is untrusted: the page inserts ledger strings with
   `textContent` only, and inline JSON escapes `<`, U+2028 and U+2029.
 - The server answers GET `/` and `/api/state` only, binds 127.0.0.1,

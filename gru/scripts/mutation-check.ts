@@ -123,6 +123,14 @@ export const MUTANTS: Mutant[] = [
     replace: "          undefined,\n",
     tests: ["test/preview.test.ts"],
   },
+  {
+    id: "dru-ignores-refused-actions",
+    guarantee: "DRU flags a PASS from a Minion that tried forbidden actions",
+    file: "src/dru/challenge.ts",
+    find: "if (denied + rejected > 0) {",
+    replace: "if (false) {",
+    tests: ["test/dru.test.ts"],
+  },
 ];
 
 function run(dir: string, tests: string[]): { status: number | null; output: string } {

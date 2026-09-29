@@ -25,8 +25,9 @@ N/A), 12/12 mutants killed, wiki lint clean.
    run `node --test test/opensandbox.test.ts`. If it passes, the
    Director admits it (`admit: ["P1","P2","P8"]`) and P8 can be met;
    a CI job with Docker could run it on every push.
-2. **DRU** (shadow PM): the Workbench already has its panels, stating
-   it is not built.
+2. **DRU**: v0 exists (`src/dru/challenge.ts`, rules over the ledger,
+   shown in the Workbench). Next: a model-backed DRU and the bounded
+   GRU–DRU debate (freeze §10).
 3. **Live-model run** once a key is in the environment settings.
 4. Workbench approvals from the page would make it a Director channel:
    needs authentication first.

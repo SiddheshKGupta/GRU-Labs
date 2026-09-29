@@ -7,6 +7,7 @@
 // paths, command ids) is carried as data; the page must render it as text.
 
 import type { Json } from "../ledger/canonical.ts";
+import { challenge, type Objection } from "../dru/challenge.ts";
 import type { LedgerEvent } from "../ledger/ledger.ts";
 
 export interface EpisodeInput {
@@ -77,6 +78,8 @@ export interface MinionView {
   last_at: string;
   ledger_ok: boolean;
   problems: string[];
+  /** DRU v0's objections to this episode, most severe first. */
+  objections: Objection[];
 }
 
 export interface WorkbenchView {
@@ -98,7 +101,10 @@ export interface WorkbenchView {
     violations: number;
     evidence: number;
     ledgers_broken: number;
+    objections: number;
+    high_objections: number;
   };
+  dru: { top: (Objection & { minion: string }) | null; by_question: Record<string, number> };
   lab: { routes: { id: string; episodes: number }[]; backends: { id: string; episodes: number }[]; unmet: string[] };
 }
 
@@ -181,6 +187,7 @@ function foldEpisode(input: EpisodeInput, feed: FeedItem[], pending: PendingAppr
     last_at: events.at(-1)?.at ?? "",
     ledger_ok: input.problems.length === 0,
     problems: [...input.problems],
+    objections: challenge(events, input.problems),
   };
 
   const proposals = new Map<string, { tool: string; effect: string; consequences: string[] }>();
@@ -304,6 +311,21 @@ function tally(values: (string | null)[]): { id: string; episodes: number }[] {
   return [...counts].map(([id, episodes]) => ({ id, episodes })).sort((a, b) => b.episodes - a.episodes || a.id.localeCompare(b.id));
 }
 
+function druSummary(episodes: readonly MinionView[]): WorkbenchView["dru"] {
+  const rank = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
+  let top: (Objection & { minion: string }) | null = null;
+  const by_question: Record<string, number> = {};
+  for (const episode of episodes) {
+    for (const objection of episode.objections) {
+      by_question[objection.question] = (by_question[objection.question] ?? 0) + 1;
+      // Network-open applies to every episode alike; it is not the headline.
+      if (objection.rule === "network-open") continue;
+      if (top === null || rank[objection.severity] < rank[top.severity]) top = { ...objection, minion: episode.minion };
+    }
+  }
+  return { top, by_question };
+}
+
 export function buildView(inputs: readonly EpisodeInput[], now: Date = new Date()): WorkbenchView {
   const feed: FeedItem[] = [];
   const pending: PendingApproval[] = [];
@@ -332,7 +354,10 @@ export function buildView(inputs: readonly EpisodeInput[], now: Date = new Date(
       violations: sum("violations"),
       evidence: sum("evidence"),
       ledgers_broken: episodes.filter((episode) => !episode.ledger_ok).length,
+      objections: episodes.reduce((total, episode) => total + episode.objections.length, 0),
+      high_objections: episodes.reduce((total, episode) => total + episode.objections.filter((o) => o.severity === "HIGH").length, 0),
     },
+    dru: druSummary(episodes),
     lab: {
       routes: tally(episodes.map((episode) => episode.route)),
       backends: tally(episodes.flatMap((episode) => episode.safety?.backends ?? [])),
