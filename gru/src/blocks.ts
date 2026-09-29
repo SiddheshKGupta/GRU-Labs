@@ -7,6 +7,7 @@
 
 import type { Blocks } from "./types.ts";
 import { parseContract } from "./contract.ts";
+import { NodePermissionIsolation } from "./executors/isolation.ts";
 import { WorkspaceExecutor } from "./executors/workspace.ts";
 import { FixtureRoute, loadFixture } from "./routes/fixture.ts";
 import { ProviderRegistry } from "./routes/providers.ts";
@@ -14,7 +15,9 @@ import { openSession } from "./session.ts";
 
 const blocks: Blocks = {
   openSession,
-  executor: (root, commands) => new WorkspaceExecutor(root, commands),
+  // Declared commands and checks that run node are confined by Node's
+  // permission model; anything else runs unconfined and the safety label says so.
+  executor: (root, commands) => new WorkspaceExecutor(root, commands, { isolation: new NodePermissionIsolation() }),
   catalog: (configs) => new ProviderRegistry(configs),
   fixtureRoute: (script) => new FixtureRoute(loadFixture(script)),
   parseContract,

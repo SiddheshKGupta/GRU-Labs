@@ -22,7 +22,7 @@ const SRC = fileURLToPath(new URL("../src/", import.meta.url));
 // Effectful specifier -> the only source files allowed to import it.
 const ALLOWED: Record<string, readonly string[]> = {
   // Reading the Director's own files (contract, config, fixtures) is T0 input, not a Minion effect.
-  "node:fs": ["ledger/store.ts", "executors/workspace.ts", "config.ts", "cli/main.ts", "cli/repl.ts", "cli/host-commands.ts", "hooks/daemon.ts"],
+  "node:fs": ["ledger/store.ts", "executors/workspace.ts", "executors/isolation.ts", "config.ts", "cli/main.ts", "cli/repl.ts", "cli/host-commands.ts", "hooks/daemon.ts"],
   // The hook daemon and client stat, chmod and unlink their own unix socket; nothing else.
   "node:fs/promises": ["hooks/daemon.ts", "hooks/client.ts"],
   "node:child_process": ["executors/process.ts"],

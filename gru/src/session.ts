@@ -289,7 +289,14 @@ class Session implements GovernedSession {
 
     this.#manifest0 = executor.manifest(this.contract.ignore);
     this.tools = toolDefinitions(this.#commandIds);
-    this.safety = computeSafety(options.backends ?? []);
+    this.safety = computeSafety(
+      options.backends ?? (executor.isolation ? [executor.isolation] : []),
+      [
+        ...this.contract.commands.map((command) => command.argv),
+        ...this.contract.verification.checks.map((check) => check.argv),
+        ...this.contract.verification.must_fail.map((check) => check.argv),
+      ],
+    );
 
     const route = options.route ?? null;
     const provenance = {
@@ -771,6 +778,7 @@ class Session implements GovernedSession {
       exit_code: run.exit_code,
       timed_out: run.timed_out,
       duration_ms: run.duration_ms,
+      isolation: run.isolation ?? "none",
       stdout: run.stdout,
       stderr: run.stderr,
     };

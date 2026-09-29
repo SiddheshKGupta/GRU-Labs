@@ -43,6 +43,7 @@ import {
   type ProcessOutcome,
   type Redeem,
 } from "../types.ts";
+import type { IsolationBackend } from "./isolation.ts";
 import { assertArgv, assertTimeout, runArgv, scrubbedEnv } from "./process.ts";
 
 export const MAX_READ_BYTES = 256 * 1024;
@@ -157,9 +158,11 @@ function section(label: string, text: string): string {
 
 export class WorkspaceExecutor implements EffectExecutor {
   readonly root: string;
+  readonly isolation?: IsolationBackend;
   readonly #commands: ReadonlyMap<string, DeclaredCommand>;
 
-  constructor(root: string, commands: readonly DeclaredCommand[]) {
+  constructor(root: string, commands: readonly DeclaredCommand[], options: { isolation?: IsolationBackend } = {}) {
+    if (options.isolation !== undefined) this.isolation = options.isolation;
     let real: string;
     try {
       real = fs.realpathSync(root);
@@ -249,7 +252,16 @@ export class WorkspaceExecutor implements EffectExecutor {
   }
 
   async runCheck(check: CheckSpec): Promise<ProcessOutcome> {
-    return runArgv(check.argv, { cwd: this.root, env: scrubbedEnv(check.env), timeout_ms: check.timeout_ms });
+    return this.#execute(check.argv, check.env, check.timeout_ms, "check");
+  }
+
+  /** Through the isolation backend when it covers the argv; unconfined otherwise, and labelled so. */
+  #execute(argv: readonly string[], env: Record<string, string>, timeout_ms: number, purpose: "check" | "command"): Promise<ProcessOutcome> {
+    const scrubbed = scrubbedEnv(env);
+    if (this.isolation?.covers(argv)) {
+      return this.isolation.run(argv, { root: this.root, env: scrubbed, timeout_ms, purpose });
+    }
+    return runArgv(argv, { cwd: this.root, env: scrubbed, timeout_ms });
   }
 
   manifest(ignore: readonly string[]): Map<string, string> {
@@ -456,11 +468,7 @@ export class WorkspaceExecutor implements EffectExecutor {
   async #run(commandId: string): Promise<EffectResult> {
     const command = this.#commands.get(commandId);
     if (command === undefined) throw new BindError(`${commandId} is not a declared command`);
-    const outcome = await runArgv(command.argv, {
-      cwd: this.root,
-      env: scrubbedEnv(command.env),
-      timeout_ms: command.timeout_ms,
-    });
+    const outcome = await this.#execute(command.argv, command.env, command.timeout_ms, "command");
     const status = outcome.timed_out ? `exit ${outcome.exit_code} (timed out after ${command.timeout_ms} ms)` : `exit ${outcome.exit_code}`;
     return {
       ok: outcome.exit_code === 0,
@@ -469,6 +477,7 @@ export class WorkspaceExecutor implements EffectExecutor {
         exit_code: outcome.exit_code,
         timed_out: outcome.timed_out,
         duration_ms: outcome.duration_ms,
+        isolation: outcome.isolation ?? "none",
       },
       model_content: `${status}\n${section("stdout", outcome.stdout)}${section("stderr", outcome.stderr)}`,
       outputs: [

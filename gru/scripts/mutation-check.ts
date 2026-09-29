@@ -99,6 +99,22 @@ export const MUTANTS: Mutant[] = [
     replace: '...(process.env as Record<string, string>), LANG: "C.UTF-8",',
     tests: ["test/conformance/conformance.test.ts", "test/executors-process.test.ts"],
   },
+  {
+    id: "isolation-not-applied",
+    guarantee: "S7/P2: a covered command runs confined, not with the operator's filesystem",
+    file: "src/executors/isolation.ts",
+    find: '"--permission",',
+    replace: "",
+    tests: ["test/conformance/conformance.test.ts"],
+  },
+  {
+    id: "partial-backend-counts",
+    guarantee: "safety label: a backend that leaves any argv unconfined provides nothing",
+    file: "src/avl/safety.ts",
+    find: "argvs.every((argv) => backend.covers!(argv))",
+    replace: "argvs.some((argv) => backend.covers!(argv))",
+    tests: ["test/conformance/conformance.test.ts"],
+  },
 ];
 
 function run(dir: string, tests: string[]): { status: number | null; output: string } {

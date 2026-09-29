@@ -13,6 +13,7 @@ import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
 
 import { defaultBlocks } from "../../src/blocks.ts";
+import { WorkspaceExecutor } from "../../src/executors/workspace.ts";
 import { Gate, effectDigest, AuthorizedAction } from "../../src/avl/gate.ts";
 import { principal } from "../../src/avl/principal.ts";
 import { DenyAllDirector, ScriptedDirector } from "../../src/director/channels.ts";
@@ -80,12 +81,13 @@ type Wrap = (inner: EffectExecutor, session: () => GovernedSession) => EffectExe
 
 async function episode(
   turns: unknown[],
-  options: { contract?: TaskContract; director?: DirectorChannel; root?: string; wrap?: Wrap } = {},
+  options: { contract?: TaskContract; director?: DirectorChannel; root?: string; wrap?: Wrap; unconfined?: boolean } = {},
 ): Promise<Episode> {
   const root = options.root ?? workspace();
   const state = tempDir("gru-state-");
   const task = options.contract ?? contract();
-  const inner = defaultBlocks.executor(root, task.commands);
+  // unconfined: the slice-1 executor with no isolation backend, for the claims that hold without one.
+  const inner = options.unconfined ? new WorkspaceExecutor(root, task.commands) : defaultBlocks.executor(root, task.commands);
   const route = defaultBlocks.fixtureRoute({ turns });
   let session: GovernedSession | undefined;
   const executor = options.wrap ? options.wrap(inner, () => session!) : inner;
@@ -143,12 +145,23 @@ describe("S1 effect mediation", () => {
     assert.ok(existsSync(join(root, "src/app.txt")));
   });
 
-  test("PARTIAL: code run by a declared command is not mediated, but in-workspace changes are caught", async () => {
-    const task = contract({
+  const sneak = () =>
+    contract({
       grant: { scopes: ["workspace:read", "workspace:write", "command:sneak"], ttl_seconds: 600 },
       commands: [{ id: "sneak", argv: [NODE, "-e", "require('fs').writeFileSync('src/extra.txt', 'x')"], consequences: ["EXECUTE_WORKSPACE_CODE"], timeout_ms: 30_000 }],
     });
-    const { report, events } = await episode([{ calls: [{ name: "run_command", input: { command_id: "sneak" } }] }, { text: "done" }], { contract: task });
+
+  test("confined: node-permission refuses a declared command's write into the workspace", async () => {
+    const { report, events, root } = await episode([{ calls: [{ name: "run_command", input: { command_id: "sneak" } }] }, { text: "done" }], { contract: sneak() });
+    assert.ok(!existsSync(join(root, "src/extra.txt")), "the write was refused");
+    assert.deepEqual(of(events, "violation"), []);
+    const effect = of(events, "effect").map(body).find((b) => (b.summary as Record<string, unknown>)?.command_id === "sneak");
+    assert.equal((effect?.summary as Record<string, unknown>)?.isolation, "node-permission");
+    assert.deepEqual(report.safety.backends, ["node-permission"]);
+  });
+
+  test("PARTIAL, unconfined: code run by a declared command is not mediated, but in-workspace changes are caught", async () => {
+    const { report, events } = await episode([{ calls: [{ name: "run_command", input: { command_id: "sneak" } }] }, { text: "done" }], { contract: sneak(), unconfined: true });
     const violations = of(events, "violation").map(body);
     assert.ok(violations.some((violation) => violation.kind === "UNMEDIATED_CHANGE" && violation.path === "src/extra.txt"));
     assert.equal(report.closure.status, "FAIL");
@@ -269,13 +282,34 @@ describe("S7 ambient authority", () => {
     }
   });
 
-  test("FAIL, recorded not hidden: a declared command can write outside the workspace undetected", async () => {
-    const outside = join(tempDir("gru-outside-"), "escaped.txt");
-    const task = contract({
+  const escape = (outside: string, extra: object[] = []) =>
+    contract({
       grant: { scopes: ["workspace:read", "command:escape"], ttl_seconds: 600 },
-      commands: [{ id: "escape", argv: [NODE, "-e", `require('fs').writeFileSync(${JSON.stringify(outside)}, 'x')`], consequences: ["EXECUTE_WORKSPACE_CODE"], timeout_ms: 30_000 }],
+      commands: [
+        { id: "escape", argv: [NODE, "-e", `require('fs').writeFileSync(${JSON.stringify(outside)}, 'x')`], consequences: ["EXECUTE_WORKSPACE_CODE"], timeout_ms: 30_000 },
+        ...extra,
+      ],
     });
-    const { report } = await episode([{ calls: [{ name: "run_command", input: { command_id: "escape" } }] }, { text: "done" }], { contract: task });
+
+  test("confined: node-permission refuses a write outside the workspace; P1 and P2 met, P8 still unmet", async () => {
+    const outside = join(tempDir("gru-outside-"), "escaped.txt");
+    const { report } = await episode([{ calls: [{ name: "run_command", input: { command_id: "escape" } }] }, { text: "done" }], { contract: escape(outside) });
+    assert.ok(!existsSync(outside), "the escape was refused");
+    assert.equal(report.safety.mode, "UNSAFE_DEVELOPMENT");
+    assert.deepEqual(report.safety.unmet, ["P8"]);
+  });
+
+  test("a backend that leaves one argv unconfined provides nothing", async () => {
+    const outside = join(tempDir("gru-outside-"), "escaped.txt");
+    const task = escape(outside, [{ id: "shell", argv: ["sh", "-c", "true"], consequences: ["EXECUTE_WORKSPACE_CODE"], timeout_ms: 30_000 }]);
+    const { report } = await episode([{ text: "done" }], { contract: task });
+    assert.deepEqual(report.safety.unmet, ["P1", "P2", "P8"]);
+    assert.match(report.safety.backends[0]!, /partial/);
+  });
+
+  test("FAIL, recorded not hidden: unconfined, a declared command can write outside the workspace undetected", async () => {
+    const outside = join(tempDir("gru-outside-"), "escaped.txt");
+    const { report } = await episode([{ calls: [{ name: "run_command", input: { command_id: "escape" } }] }, { text: "done" }], { contract: escape(outside), unconfined: true });
     assert.ok(existsSync(outside), "the escape happened");
     assert.equal(report.safety.mode, "UNSAFE_DEVELOPMENT");
     assert.ok(report.safety.unmet.includes("P8"));

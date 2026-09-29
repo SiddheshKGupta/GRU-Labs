@@ -150,3 +150,12 @@ commands still say `GRU-Research`. No wiki claim changed.
 Company-specific work built on GRU (a YouTube production-house studio)
 lives in its own private repository, cloned from this history, so GRU
 Labs stays company-neutral.
+
+## 2026-09-29 — isolation backends (CDR-007)
+
+Declared commands and checks now run through an isolation backend.
+Node's permission model is the default; OpenSandbox is the next backend
+and stays quarantined until it runs live. The quick benchmark's GRU
+false PASS count went from 1/10 to 0/10 and harm landed from 3/10 to
+1/10. P8 (network) is still unmet, so episodes stay UNSAFE_DEVELOPMENT.
+SLICE_1's S7 prediction is amended rather than rewritten.

@@ -258,6 +258,8 @@ D8  INDEPENDENT means "no protected file changed", which is vacuous when
 | S5 prospective credit | **N/A** | no learning in slice 1 |
 | S6 rollback | **N/A** | nothing is promoted; revocation is append-only and tested under S8 |
 | S7 ambient authority | **FAIL** | no isolation backend; in-workspace changes are detected, outside changes are not |
+
+> AMENDED 2026-09-29 (CDR-007): with the node-permission backend, S7 is PARTIAL for contracts whose declared argv all run `node` (filesystem confined, P1 and P2 met; network open, P8 unmet). Without a backend the original FAIL still holds and is still tested.
 | S8 TOCTOU | **PASS** | digest recomputed at execution; replay, expiry, revocation, symlink swap refused |
 
 If every result matches, suspect the tests were written to agree with

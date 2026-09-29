@@ -65,6 +65,8 @@ export interface ProcessOutcome {
   stderr: string;
   duration_ms: number;
   timed_out: boolean;
+  /** The isolation backend that confined the run, or absent when nothing did. */
+  isolation?: string;
 }
 
 export interface EffectOutput {
@@ -87,9 +89,18 @@ export class BindError extends Error {
   override name = "BindError";
 }
 
+/** What an executor tells the session about its confinement (safety label, SLICE_1 §4.3). */
+export interface IsolationInfo {
+  readonly id: string;
+  readonly provides: readonly string[];
+  covers(argv: readonly string[]): boolean;
+}
+
 export interface EffectExecutor {
   /** realpath of the workspace root. */
   readonly root: string;
+  /** The isolation backend declared commands and checks run under, if any. */
+  readonly isolation?: IsolationInfo;
   /** Resolve an effect against the filesystem now. Throws BindError if it cannot be bound safely. */
   bind(effect: Effect): Binding;
   /**
@@ -264,8 +275,12 @@ export interface OpenSessionOptions {
   minion: Principal;
   clock?: Clock;
   executor?: EffectExecutor;
-  /** Isolation backends the Director has admitted. Empty in slice 1. */
-  backends?: { id: string; provides: string[] }[];
+  /**
+   * Isolation backends the Director has admitted. Defaults to the executor's
+   * own backend. A backend counts only if it covers every declared command
+   * and check; otherwise it is listed as partial and provides nothing.
+   */
+  backends?: { id: string; provides: readonly string[]; covers?: (argv: readonly string[]) => boolean }[];
 }
 
 export interface GovernedSession {

@@ -134,6 +134,8 @@ meaningful external dependency of the implementation in `gru/`.
   a hand-written MCP server plus a hook daemon, and what each host gets
 - [[cdr-006-munder-difflin-office]] — an animated terminal office driven
   only by ledger events; Munder Difflin's metaphor, original visuals
+- [[cdr-007-isolation-backends]] — declared commands and checks run
+  confined: Node's permission model now, OpenSandbox next
 
 ## Implementation
 
