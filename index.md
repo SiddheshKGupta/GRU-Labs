@@ -1,4 +1,4 @@
-# GRU research wiki
+# GRU Labs wiki
 
 Navigation hub. Every page under `wiki/` is linked from here; a page that
 is not linked is reported as an orphan by `python lint.py`.

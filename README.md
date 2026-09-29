@@ -1,7 +1,9 @@
-# gru-research
+# GRU Labs
 
-Research wiki for **GRU** (Governed Recurrent Unit), a governed AI
-project-delivery system. It holds what we have read, what we have
+GRU Labs (formerly GRU Research; the GitHub repository is still named
+`GRU-Research` until it is renamed there) is the research wiki for
+**GRU** (Governed Recurrent Unit), a governed AI project-delivery
+system. It holds what we have read, what we have
 checked, and what we got wrong.
 
 It also holds the implementation, in [`gru/`](gru/README.md). The code is

@@ -139,3 +139,14 @@ None was caught by a test. All three surfaced in a builder's report,
 and the tests had encoded the error. This is the same failure
 [[verification-discipline]] describes, one level up: a test written
 from a flawed spec agrees with the spec.
+
+## 2026-09-29 — renamed GRU Labs
+
+The project is now called GRU Labs. Titles in `README.md` and `index.md`
+changed; the GitHub repository keeps the name `GRU-Research` until the
+Director renames it in the repository settings, so paths and clone
+commands still say `GRU-Research`. No wiki claim changed.
+
+Company-specific work built on GRU (a YouTube production-house studio)
+lives in its own private repository, cloned from this history, so GRU
+Labs stays company-neutral.

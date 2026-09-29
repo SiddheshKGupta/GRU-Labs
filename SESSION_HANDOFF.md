@@ -10,7 +10,7 @@ Nothing is running. Read this file first, then `gru/README.md` and
 | Repo | Branch state | Open item |
 |---|---|---|
 | Escapement-Core | `d217e31` pushed; PR [SiddheshKGupta/Escapement-Core#3](https://github.com/SiddheshKGupta/Escapement-Core/pull/3) open, CI green on 3.10/3.12/3.13 | awaiting review/merge; nobody is watching it |
-| GRU-Research | slice 1 merged and pushed; CI green through `3639997` | benchmark WIP and office WIP committed with this handoff |
+| GRU Labs (repo `GRU-Research`) | slice 1 merged and pushed; CI green through `3639997` | benchmark WIP and office WIP committed with this handoff |
 | Escapement (v1), Continuum | untouched | none |
 
 ## What was done
@@ -20,7 +20,7 @@ argv only, `shell=False`) and PR #61 (code-quality fixes). All 7 scripts
 byte-identical to v1. `EFFECT_SURFACE_AUDIT.md` got a CORRECTED block.
 196 tests, doctor 0 failures, 122/122 evals.
 
-**GRU-Research** — the GRU slice-1 implementation in `gru/`:
+**GRU Labs** (repo `GRU-Research`) — the GRU slice-1 implementation in `gru/`:
 
 ```text
 kernel     session, AVL (consequences, gate, verification, closure, safety),
