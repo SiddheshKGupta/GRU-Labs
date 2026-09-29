@@ -10,13 +10,19 @@ export function loadEpisodes(stateDir: string): EpisodeInput[] {
   return listEpisodes(stateDir).map((episode_id) => {
     let events: LedgerEvent[] = [];
     const problems: string[] = [];
+    let blob: ((digest: string) => string | undefined) | undefined;
     try {
-      events = parseLedger(FileStore.open(stateDir, episode_id).lines());
+      const store = FileStore.open(stateDir, episode_id);
+      blob = (digest) => {
+        const bytes = store.getBlob(digest);
+        return bytes === undefined ? undefined : new TextDecoder().decode(bytes);
+      };
+      events = parseLedger(store.lines());
       problems.push(...verifyChain(events), ...verifyStructure(events));
     } catch (error) {
       problems.push(error instanceof Error ? error.message : String(error));
     }
-    return { episode_id, events, problems };
+    return blob === undefined ? { episode_id, events, problems } : { episode_id, events, problems, blob };
   });
 }
 

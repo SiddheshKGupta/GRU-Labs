@@ -15,6 +15,8 @@ export interface EpisodeInput {
   events: readonly LedgerEvent[];
   /** verifyChain + verifyStructure findings; empty means the ledger verifies. */
   problems: readonly string[];
+  /** Evidence blob reader, so DRU can read what the Minion wrote. */
+  blob?: (digest: string) => string | undefined;
 }
 
 export type Tone = "ok" | "warn" | "bad" | "info";
@@ -187,7 +189,7 @@ function foldEpisode(input: EpisodeInput, feed: FeedItem[], pending: PendingAppr
     last_at: events.at(-1)?.at ?? "",
     ledger_ok: input.problems.length === 0,
     problems: [...input.problems],
-    objections: challenge(events, input.problems),
+    objections: challenge(events, input.problems, input.blob),
   };
 
   const proposals = new Map<string, { tool: string; effect: string; consequences: string[] }>();
