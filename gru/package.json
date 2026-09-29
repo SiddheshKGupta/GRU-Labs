@@ -23,6 +23,7 @@
     "conformance": "node --test \"test/conformance/*.test.ts\"",
     "mutation": "node scripts/mutation-check.ts",
     "check": "npm run typecheck && npm test && npm run mutation",
-    "gru": "node src/cli.ts"
+    "gru": "node src/cli.ts",
+    "bench": "node bench/run.ts"
   }
 }
