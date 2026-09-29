@@ -67,3 +67,17 @@ its OpenAPI contracts rather than the SDK (keeps the kernel dependency-
 free). It stays quarantined, providing nothing in the safety label,
 until a live smoke test passes against a real server (Nefario readiness:
 startup, protocol, semantic, security).
+
+## FACT — the adapter as built (2026-09-29)
+
+`gru/src/executors/opensandbox.ts`, selected with `GRU_ISOLATION=opensandbox`
+(`OPEN_SANDBOX_URL`, `GRU_SANDBOX_IMAGE`, key in `OPEN_SANDBOX_API_KEY`).
+Per run: create a sandbox with egress `deny`, wait for `Running`, get
+the execd endpoint, upload the workspace, run the argv natively, read the
+exit code from the command status, delete the sandbox. Tested against a
+fake server built from the two OpenAPI files: native argv, egress
+denied, the lifecycle key never reaches execd, the sandbox is always
+deleted, an unreachable server is "did not run" (-1). The live smoke
+test is written and skipped until `OPEN_SANDBOX_URL` is set. Until then
+`provides` is empty and the safety label counts nothing for it.
+

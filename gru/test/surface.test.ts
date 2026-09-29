@@ -22,7 +22,7 @@ const SRC = fileURLToPath(new URL("../src/", import.meta.url));
 // Effectful specifier -> the only source files allowed to import it.
 const ALLOWED: Record<string, readonly string[]> = {
   // Reading the Director's own files (contract, config, fixtures) is T0 input, not a Minion effect.
-  "node:fs": ["ledger/store.ts", "executors/workspace.ts", "executors/isolation.ts", "config.ts", "cli/main.ts", "cli/repl.ts", "cli/host-commands.ts", "cli/workbench-command.ts", "hooks/daemon.ts"],
+  "node:fs": ["ledger/store.ts", "executors/workspace.ts", "executors/isolation.ts", "executors/opensandbox.ts", "config.ts", "cli/main.ts", "cli/repl.ts", "cli/host-commands.ts", "cli/workbench-command.ts", "hooks/daemon.ts"],
   // The hook daemon and client stat, chmod and unlink their own unix socket; nothing else.
   "node:fs/promises": ["hooks/daemon.ts", "hooks/client.ts"],
   "node:child_process": ["executors/process.ts"],
@@ -39,7 +39,8 @@ const FORBIDDEN = new Set([
 // Pure or stream-only built-ins any file may use.
 const PURE = new Set(["node:crypto", "node:path", "node:url", "node:os", "node:util", "node:stream", "node:events", "node:string_decoder", "node:buffer", "node:timers/promises"]);
 // workbench/page.ts: the fetch is browser code in the page, polling its own loopback origin (CSP connect-src 'self').
-const FETCH_ALLOWED = new Set(["routes/openai-compatible.ts", "routes/providers.ts", "workbench/page.ts"]);
+// executors/opensandbox.ts: the OpenSandbox lifecycle and execd APIs (CDR-007).
+const FETCH_ALLOWED = new Set(["routes/openai-compatible.ts", "routes/providers.ts", "workbench/page.ts", "executors/opensandbox.ts"]);
 
 function sources(dir: string): string[] {
   const out: string[] = [];
