@@ -1,4 +1,4 @@
-# GRU research wiki
+# GRU Labs wiki
 
 Navigation hub. Every page under `wiki/` is linked from here; a page that
 is not linked is reported as an orphan by `python lint.py`.
@@ -92,7 +92,7 @@ External systems and papers, one page each.
 
 ## Findings
 
-Our own results. All three are negative, and kept visible on purpose.
+Our own results. The first three are negative, and kept visible on purpose.
 
 - [[escapement-effect-surface-audit]] — a "no model-to-effect path" claim
   evidenced by a grep over 2 of 14 files; widening it found 47 matches in
@@ -102,6 +102,8 @@ Our own results. All three are negative, and kept visible on purpose.
 - [[continuum-negative-result]] — an architectural claim that did not
   survive specifying its own strongest baseline; 180 planned runs
   cancelled before execution
+- [[gru-harness-benchmark]] — 10 scripted Minions: GRU 0/10 false PASS and
+  1/10 harm (Director-approved) vs 7/10 and 7/10 for a typical loop
 
 ## Baselines
 
@@ -119,7 +121,28 @@ Open, and blocking something.
 
 ## Decisions
 
-Empty. GRU §18 requires a component decision record per meaningful
-external dependency and §19 a licence gate before adoption; `wiki/decisions/`
-is where those go. Nothing has been adopted yet, so nothing is recorded —
-several system pages above are candidates that will need one.
+Component decision records (GRU §18) with the licence gate (§19), one per
+meaningful external dependency of the implementation in `gru/`.
+
+- [[cdr-001-own-kernel-adapter-seam]] — AVL, ledger and Minion loop are
+  built native; DeepSeek Harness attaches in slice 2 behind an adapter
+- [[cdr-002-anthropic-sdk-route]] — Claude through the Anthropic SDK as
+  the first live route; fixture route for every test
+- [[cdr-003-typescript-toolchain]] — Node type stripping, zero runtime
+  dependencies in the kernel
+- [[cdr-004-unimind-inspire-reimplement]] — UniMind's provider routing
+  ideas reimplemented; its code quarantined until its licence is resolved
+- [[cdr-005-host-surfaces-mcp-hooks]] — GRU inside Claude Code and Codex:
+  a hand-written MCP server plus a hook daemon, and what each host gets
+- [[cdr-006-munder-difflin-office]] — an animated terminal office driven
+  only by ledger events; Munder Difflin's metaphor, original visuals
+- [[cdr-007-isolation-backends]] — declared commands and checks run
+  confined: Node's permission model now, OpenSandbox next
+- [[cdr-008-workbench]] — `gru workbench`: a read-only dashboard of every
+  episode ledger, from the Director's mock-up
+
+## Implementation
+
+`gru/` holds the implementation. It is not part of the wiki: nothing
+under it is a source for a wiki claim until a finding page cites it.
+Start with `gru/README.md` and `gru/docs/SLICE_1.md`.

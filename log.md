@@ -98,3 +98,76 @@ adoption; the candidates are already on the shelf ([[openshell]],
 [[cpex]], [[microsoft-agt]], Cedar, [[deepseek-harness]]) and none has a
 record. Nothing has been adopted, so nothing is overdue yet — but the
 first adoption must not precede the first record.
+
+---
+
+## 2026-09-29 — first decision records; the implementation begins
+
+**Added:** `wiki/decisions/` gets its first six records, each written
+before or alongside the adoption it governs, so the first adoption did
+not precede the first record:
+
+```text
+cdr-001  own kernel; DeepSeek Harness behind an adapter in slice 2
+cdr-002  Anthropic SDK as the first live route (MIT, pinned)
+cdr-003  Node type stripping; zero runtime dependencies in the kernel
+cdr-004  UniMind: ideas reimplemented, code quarantined (no LICENSE file)
+cdr-005  Claude Code and Codex surfaces: MCP server plus hook daemon
+cdr-006  Munder Difflin: event-to-avatar metaphor, original terminal art
+```
+
+**Added:** `gru/`, the slice-1 implementation. It is outside the wiki's
+invariant: nothing there is a source for a wiki claim until a finding
+cites it, and `lint.py` does not read it.
+
+### What the implementation taught the specification
+
+The spec (`gru/docs/SLICE_1.md`) predicted Core's S1-S8 before any test
+existed, and every observed result matched. That is recorded as grounds
+for suspicion, not confidence: the same hands wrote both. What moved
+instead was the specification itself, corrected in place:
+
+```text
+D6  verification strength graded outcome instead of trust, which made
+    every verified failure inadmissible -- the opposite of Core §5.2
+D7  a gate refusal (e.g. a Director's mid-flight revocation) was
+    recorded as a breach
+D8  INDEPENDENT was reachable with nothing protected
+```
+
+None was caught by a test. All three surfaced in a builder's report,
+and the tests had encoded the error. This is the same failure
+[[verification-discipline]] describes, one level up: a test written
+from a flawed spec agrees with the spec.
+
+## 2026-09-29 — renamed GRU Labs
+
+The project is now called GRU Labs. Titles in `README.md` and `index.md`
+changed; the GitHub repository keeps the name `GRU-Research` until the
+Director renames it in the repository settings, so paths and clone
+commands still say `GRU-Research`. No wiki claim changed.
+
+Company-specific work built on GRU (a YouTube production-house studio)
+lives in its own private repository, cloned from this history, so GRU
+Labs stays company-neutral.
+
+## 2026-09-29 — isolation backends (CDR-007)
+
+Declared commands and checks now run through an isolation backend.
+Node's permission model is the default; OpenSandbox is the next backend
+and stays quarantined until it runs live. The quick benchmark's GRU
+false PASS count went from 1/10 to 0/10 and harm landed from 3/10 to
+1/10. P8 (network) is still unmet, so episodes stay UNSAFE_DEVELOPMENT.
+SLICE_1's S7 prediction is amended rather than rewritten.
+
+## 2026-09-29 — the GRU Workbench (CDR-008)
+
+`gru workbench` serves a read-only dashboard folded from the ledgers;
+`--snapshot` writes one HTML file. DRU panels say DRU is not built.
+The benchmark gained `--keep-state` so its ledgers can be viewed.
+
+## 2026-09-29 — full benchmark recorded
+
+Full run with isolation on: GRU 0/10 false PASS, 1/10 harm landed (the
+Director-approved test change), scale to 50 concurrent Minions with all
+ledgers verified. Recorded in [[gru-harness-benchmark]].
