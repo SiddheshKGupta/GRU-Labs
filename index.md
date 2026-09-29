@@ -136,6 +136,8 @@ meaningful external dependency of the implementation in `gru/`.
   only by ledger events; Munder Difflin's metaphor, original visuals
 - [[cdr-007-isolation-backends]] — declared commands and checks run
   confined: Node's permission model now, OpenSandbox next
+- [[cdr-008-workbench]] — `gru workbench`: a read-only dashboard of every
+  episode ledger, from the Director's mock-up
 
 ## Implementation
 

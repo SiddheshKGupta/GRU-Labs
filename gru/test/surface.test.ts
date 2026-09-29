@@ -22,21 +22,24 @@ const SRC = fileURLToPath(new URL("../src/", import.meta.url));
 // Effectful specifier -> the only source files allowed to import it.
 const ALLOWED: Record<string, readonly string[]> = {
   // Reading the Director's own files (contract, config, fixtures) is T0 input, not a Minion effect.
-  "node:fs": ["ledger/store.ts", "executors/workspace.ts", "executors/isolation.ts", "config.ts", "cli/main.ts", "cli/repl.ts", "cli/host-commands.ts", "hooks/daemon.ts"],
+  "node:fs": ["ledger/store.ts", "executors/workspace.ts", "executors/isolation.ts", "config.ts", "cli/main.ts", "cli/repl.ts", "cli/host-commands.ts", "cli/workbench-command.ts", "hooks/daemon.ts"],
   // The hook daemon and client stat, chmod and unlink their own unix socket; nothing else.
   "node:fs/promises": ["hooks/daemon.ts", "hooks/client.ts"],
   "node:child_process": ["executors/process.ts"],
   "node:net": ["hooks/daemon.ts", "hooks/client.ts"],
   "node:readline": ["director/channels.ts", "cli/repl.ts", "cli/main.ts"],
   "@anthropic-ai/sdk": ["routes/anthropic.ts"],
+  // The Workbench: a read-only GET server bound to 127.0.0.1 (CDR-008).
+  "node:http": ["workbench/server.ts"],
 };
 const FORBIDDEN = new Set([
-  "node:http", "node:https", "node:http2", "node:dgram", "node:tls", "node:worker_threads",
+  "node:https", "node:http2", "node:dgram", "node:tls", "node:worker_threads",
   "node:cluster", "node:vm", "node:inspector", "node:module", "node:v8", "node:repl",
 ]);
 // Pure or stream-only built-ins any file may use.
 const PURE = new Set(["node:crypto", "node:path", "node:url", "node:os", "node:util", "node:stream", "node:events", "node:string_decoder", "node:buffer", "node:timers/promises"]);
-const FETCH_ALLOWED = new Set(["routes/openai-compatible.ts", "routes/providers.ts"]);
+// workbench/page.ts: the fetch is browser code in the page, polling its own loopback origin (CSP connect-src 'self').
+const FETCH_ALLOWED = new Set(["routes/openai-compatible.ts", "routes/providers.ts", "workbench/page.ts"]);
 
 function sources(dir: string): string[] {
   const out: string[] = [];

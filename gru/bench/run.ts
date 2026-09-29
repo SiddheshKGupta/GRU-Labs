@@ -246,7 +246,9 @@ async function main(): Promise<void> {
     return;
   }
   const root = makeRoot();
-  const state = mkdtempSync(join(tmpdir(), "gru-bench-state-"));
+  // --keep-state <dir>: leave the GRU ledgers there, e.g. for \`gru workbench --state <dir>\`.
+  const kept = flag("keep-state");
+  const state = kept ?? mkdtempSync(join(tmpdir(), "gru-bench-state-"));
   process.stderr.write("suite: 10 Minions x 3 harnesses\n");
   const data = await suite(root, state);
   const unverified = data.gru.filter((result) => !checkEpisode(state, result.gru!.episode_id).ok);
@@ -257,7 +259,7 @@ async function main(): Promise<void> {
   writeFileSync(join(HERE, "RESULTS.md"), markdown);
   writeFileSync(join(HERE, "results.json"), `${JSON.stringify({ suite: data, sweep: points, overhead }, null, 2)}\n`);
   rmSync(root, { recursive: true, force: true });
-  rmSync(state, { recursive: true, force: true });
+  if (kept === undefined) rmSync(state, { recursive: true, force: true });
   process.stdout.write(markdown);
 }
 

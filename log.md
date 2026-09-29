@@ -159,3 +159,9 @@ and stays quarantined until it runs live. The quick benchmark's GRU
 false PASS count went from 1/10 to 0/10 and harm landed from 3/10 to
 1/10. P8 (network) is still unmet, so episodes stay UNSAFE_DEVELOPMENT.
 SLICE_1's S7 prediction is amended rather than rewritten.
+
+## 2026-09-29 — the GRU Workbench (CDR-008)
+
+`gru workbench` serves a read-only dashboard folded from the ledgers;
+`--snapshot` writes one HTML file. DRU panels say DRU is not built.
+The benchmark gained `--keep-state` so its ledgers can be viewed.

@@ -5,6 +5,7 @@ import { defaultBlocks } from "./blocks.ts";
 import { hostCommands } from "./cli/host-commands.ts";
 import { ledgerCommands } from "./cli/ledger-commands.ts";
 import { main } from "./cli/main.ts";
+import { workbenchCommand } from "./cli/workbench-command.ts";
 
 process.exitCode = await main(
   process.argv.slice(2),
@@ -17,5 +18,5 @@ process.exitCode = await main(
     isTTY: Boolean(process.stdin.isTTY && process.stdout.isTTY),
   },
   defaultBlocks,
-  [...ledgerCommands(), ...hostCommands()],
+  [...ledgerCommands(), ...hostCommands(), workbenchCommand],
 );
