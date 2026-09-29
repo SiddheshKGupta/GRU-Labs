@@ -64,7 +64,8 @@ test("a RouteError from next() ends as ROUTE_ERROR with an error event", async (
   const session = new FakeSession();
   const route = new FakeRoute([turn({ calls: [call("a")] }), new RouteError("overloaded", { retryable: true, status: 529 })]);
   const events: MinionEvent[] = [];
-  const run = await runMinion({ session, route, onEvent: (event) => events.push(event) });
+  // Retries are covered in loop-robustness.test.ts; here the first failure is final.
+  const run = await runMinion({ session, route, onEvent: (event) => events.push(event), retry: { attempts: 0, base_ms: 0, max_ms: 0 } });
   assert.equal(run.outcome, "ROUTE_ERROR");
   const error = events.find((event) => event.type === "error");
   assert.ok(error && error.type === "error");
@@ -146,5 +147,9 @@ test("an error thrown by the session is not disguised as a route error", async (
     },
   });
   const route = new FakeRoute([turn({ calls: [call("a")] })]);
-  await assert.rejects(runMinion({ session, route }), /kernel bug/);
+  const events: MinionEvent[] = [];
+  const run = await runMinion({ session, route, onEvent: (event) => events.push(event) });
+  assert.equal(run.outcome, "KERNEL_ERROR");
+  const error = events.find((event) => event.type === "error");
+  assert.ok(error && error.type === "error" && error.source === "kernel" && /kernel bug/.test(error.message));
 });

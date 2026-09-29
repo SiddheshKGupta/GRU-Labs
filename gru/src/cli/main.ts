@@ -262,7 +262,10 @@ export async function runEpisode(
         out.write(renderCall(event.call, event.result, style));
         return;
       case "error":
-        out.write(style.red(`  route error: ${safeText(event.message, { max: 500 })}\n`));
+        out.write(style.red(`  ${event.source} error: ${safeText(event.message, { max: 500 })}\n`));
+        return;
+      case "retry":
+        out.write(style.yellow(`  retry ${event.attempt} in ${event.delay_ms} ms: ${safeText(event.message, { max: 200 })}\n`));
         return;
       case "end":
         out.write(`\n${style.bold("Loop ended")}  ${event.outcome}: ${event.reason}\n`);
@@ -312,9 +315,10 @@ async function finishEpisode(
   const { io } = context;
   const out = json ? io.stderr : io.stdout;
   try {
-    const { report } = await runEpisode(inputs, { blocks: context.blocks, out, style: context.style });
+    const { report, loop } = await runEpisode(inputs, { blocks: context.blocks, out, style: context.style });
     if (json) io.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
-    return report.closure.status === "PASS" ? 0 : 1;
+    // A kernel failure is an operational failure whatever the closure says.
+    return report.closure.status === "PASS" && loop.outcome !== "KERNEL_ERROR" ? 0 : 1;
   } finally {
     dispose();
   }

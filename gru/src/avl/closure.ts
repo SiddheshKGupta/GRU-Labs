@@ -21,7 +21,7 @@ export interface ClosureDecision {
 }
 
 const LOOP_FINISHED: readonly LoopOutcome[] = ["COMPLETED", "HOST_ENDED"];
-const LOOP_GAVE_UP: readonly LoopOutcome[] = ["REFUSED", "ROUTE_ERROR"];
+const LOOP_GAVE_UP: readonly LoopOutcome[] = ["REFUSED", "ROUTE_ERROR", "KERNEL_ERROR"];
 
 export function decideClosure(input: ClosureInput): ClosureDecision {
   const { loop, verification, violations } = input;

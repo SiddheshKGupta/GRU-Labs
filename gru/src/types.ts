@@ -233,7 +233,9 @@ export type LoopOutcome =
   | "BUDGET_EXHAUSTED"
   | "ROUTE_ERROR"
   | "TRUNCATED"
-  | "HOST_ENDED";
+  | "HOST_ENDED"
+  // The kernel threw while handling a call: the episode still closes, truthfully.
+  | "KERNEL_ERROR";
 
 export type ClosureStatus = "PASS" | "FAIL" | "PARTIAL" | "ABANDONED";
 export type AdmissibilityVerdict = "ADMISSIBLE_POSITIVE" | "ADMISSIBLE_NEGATIVE" | "INADMISSIBLE" | "UNRESOLVED";

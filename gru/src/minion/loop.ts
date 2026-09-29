@@ -23,7 +23,8 @@ import { minionSystemPrompt } from "./prompt.ts";
 export type MinionEvent =
   | { type: "turn"; turn: ModelTurn; index: number }
   | { type: "call"; call: ToolCall; result: ToolResult }
-  | { type: "error"; message: string; retryable: boolean | null; status: number | null }
+  | { type: "error"; source: "route" | "kernel"; message: string; retryable: boolean | null; status: number | null }
+  | { type: "retry"; attempt: number; delay_ms: number; message: string }
   | { type: "end"; outcome: LoopOutcome; reason: string };
 
 export interface MinionBudget {
@@ -31,11 +32,24 @@ export interface MinionBudget {
   max_tool_calls: number;
 }
 
+/** Retries of a turn the route marked retryable (rate limits, overload): exponential, capped. */
+export interface RetryPolicy {
+  /** Retries after the first try; 0 disables. */
+  attempts: number;
+  base_ms: number;
+  max_ms: number;
+}
+
+export const DEFAULT_RETRY: RetryPolicy = Object.freeze({ attempts: 3, base_ms: 1_000, max_ms: 16_000 });
+
 export interface RunMinionOptions {
   session: Pick<GovernedSession, "contract" | "tools" | "handle" | "recordTurn">;
   route: ModelRoute;
   budget?: MinionBudget;
   onEvent?: (event: MinionEvent) => void;
+  retry?: RetryPolicy;
+  /** Injected for tests; defaults to a real timer. */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export interface MinionRun {
@@ -46,15 +60,34 @@ export interface MinionRun {
 
 function routeFailure(error: unknown): MinionEvent {
   if (error instanceof RouteError) {
-    return { type: "error", message: error.message, retryable: error.retryable, status: error.status };
+    return { type: "error", source: "route", message: error.message, retryable: error.retryable, status: error.status };
   }
   const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-  return { type: "error", message, retryable: null, status: null };
+  return { type: "error", source: "route", message, retryable: null, status: null };
+}
+
+function failure(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
 }
 
 export async function runMinion(options: RunMinionOptions): Promise<MinionRun> {
   const { session, route, onEvent } = options;
   const budget = options.budget ?? session.contract.budget;
+  const policy = options.retry ?? DEFAULT_RETRY;
+  const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  // Safe to repeat: routes commit history only when a whole turn succeeds.
+  const nextTurn = async (conversation: RouteSession, input: { results: readonly ToolResult[] }): Promise<ModelTurn> => {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await conversation.next(input);
+      } catch (error) {
+        if (!(error instanceof RouteError) || !error.retryable || attempt > policy.attempts) throw error;
+        const delay = Math.min(policy.max_ms, policy.base_ms * 2 ** (attempt - 1));
+        onEvent?.({ type: "retry", attempt, delay_ms: delay, message: error.message });
+        await sleep(delay);
+      }
+    }
+  };
   let turns = 0;
   let toolCalls = 0;
 
@@ -67,7 +100,7 @@ export async function runMinion(options: RunMinionOptions): Promise<MinionRun> {
   let turn: ModelTurn;
   try {
     conversation = route.open({ system: minionSystemPrompt(session), task: session.contract.task, tools: session.tools });
-    turn = await conversation.next({ results: [] });
+    turn = await nextTurn(conversation, { results: [] });
   } catch (error) {
     onEvent?.(routeFailure(error));
     return end("ROUTE_ERROR", "the route failed before the first turn");
@@ -75,7 +108,12 @@ export async function runMinion(options: RunMinionOptions): Promise<MinionRun> {
 
   for (;;) {
     turns++;
-    session.recordTurn(turn);
+    try {
+      session.recordTurn(turn);
+    } catch (error) {
+      onEvent?.({ type: "error", source: "kernel", message: failure(error), retryable: null, status: null });
+      return end("KERNEL_ERROR", `the kernel failed recording turn ${turns}: ${failure(error)}`);
+    }
     onEvent?.({ type: "turn", turn, index: turns });
 
     if (turn.stop === "refusal") return end("REFUSED", "the model refused; its tool calls were not run");
@@ -92,13 +130,19 @@ export async function runMinion(options: RunMinionOptions): Promise<MinionRun> {
         return end("BUDGET_EXHAUSTED", `tool-call budget of ${budget.max_tool_calls} reached; remaining calls were not run`);
       }
       toolCalls++;
-      const result = await session.handle(call);
+      let result: ToolResult;
+      try {
+        result = await session.handle(call);
+      } catch (error) {
+        onEvent?.({ type: "error", source: "kernel", message: failure(error), retryable: null, status: null });
+        return end("KERNEL_ERROR", `the kernel failed handling ${call.name}: ${failure(error)}`);
+      }
       results.push(result);
       onEvent?.({ type: "call", call, result });
     }
 
     try {
-      turn = await conversation.next({ results });
+      turn = await nextTurn(conversation, { results });
     } catch (error) {
       onEvent?.(routeFailure(error));
       return end("ROUTE_ERROR", "the route failed mid-episode");

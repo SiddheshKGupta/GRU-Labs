@@ -124,9 +124,11 @@ alarm) and show verification outcome and strength separately.
 - Host mode: Claude Code hook payload shapes and Codex's `tool_timeout_sec`
   are from memory, tested only against payloads we wrote. Codex's
   built-in shell is not mediated at all.
-- `ProviderCatalog` lacks `invalidateAuto`; the loop does not retry
-  retryable route errors (a live 10-Minion run will hit rate limits).
-- A kernel error mid-loop leaves an episode unclosed (no LoopOutcome fits).
+- `ProviderCatalog` lacks `invalidateAuto`. ~~The loop does not retry
+  retryable route errors~~ Fixed: bounded exponential retry (3 retries,
+  1 s base, 16 s cap) of turns the route marks retryable.
+- ~~A kernel error mid-loop leaves an episode unclosed~~ Fixed: the loop
+  ends `KERNEL_ERROR`, the episode closes ABANDONED, the CLI exits 1.
 - Reconciliation compares two snapshots: changes made and reverted, or
   outside the workspace, are invisible.
 

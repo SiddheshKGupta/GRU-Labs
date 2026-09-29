@@ -157,7 +157,7 @@ test("run reports a missing contract file as an error, exit 1, without opening a
   assert.deepEqual(fake.openOptions, []);
 });
 
-test("a session error is reported and the episode is not closed under a borrowed outcome", async (t) => {
+test("a session error is reported and the episode closes as KERNEL_ERROR, not a borrowed outcome", async (t) => {
   const p = project(t);
   const fake = fakeBlocks({
     handle: () => {
@@ -167,8 +167,8 @@ test("a session error is reported and the episode is not closed under a borrowed
   const io = testIo({ cwd: p.root, env: p.env });
   const code = await main(["run", "--workspace", "ws", "--contract", "contract.json", "--fixture", "fixture.json", "--director", "deny"], io.io, fake.blocks);
   assert.equal(code, 1);
-  assert.match(io.stderr(), /ledger write failed/);
-  assert.deepEqual(fake.sessions[0]?.closed, []);
+  assert.match(io.stdout() + io.stderr(), /kernel error: Error: ledger write failed/);
+  assert.deepEqual(fake.sessions[0]?.closed, ["KERNEL_ERROR"]);
 });
 
 test("an unknown command prints help and exits 2", async () => {
